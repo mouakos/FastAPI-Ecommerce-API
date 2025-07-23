@@ -1,5 +1,6 @@
 from typing import Optional
 import uuid
+import logging
 from fastapi.params import Depends
 from typing_extensions import Annotated
 from fastapi import Request
@@ -31,6 +32,7 @@ class TokenBearer(HTTPBearer):
         token_data = decode_access_token(token)
 
         if token_data.get("jti") in token_blocklist:
+            logging.warning(f"Revoked token used: {token_data.get('jti')}")
             raise RevokedToken()
 
         if not token_data:
@@ -48,6 +50,7 @@ class AccessTokenBearer(TokenBearer):
 
     def verify_token_data(self, token_data: dict) -> None:
         if token_data and token_data.get("refresh"):
+            logging.warning("Access token used with refresh token data")
             raise AccessTokenRequired()
 
 
@@ -55,6 +58,7 @@ class RefreshTokenBearer(TokenBearer):
 
     def verify_token_data(self, token_data: dict) -> None:
         if not token_data or not token_data.get("refresh"):
+            logging.warning("Refresh token used with access token data")
             raise RefreshTokenRequired()
 
 
@@ -80,5 +84,5 @@ class RoleChecker:
 
         if current_user.role in self.allowed_roles:
             return True
-
+        logging.warning(f"User {current_user.id} does not have sufficient permissions")
         raise InsufficientPermission()

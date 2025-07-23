@@ -89,6 +89,7 @@ class UserService:
         db.add(user)
         await db.commit()
         await db.refresh(user)
+        logging.info(f"User {user.email} created successfully")
         return UserRead(**user.model_dump())
 
     @staticmethod
@@ -160,13 +161,13 @@ class UserService:
         if not user or not verify_password(login_data.password, user.password_hash):
             logging.warning(f"Failed login attempt for email: {login_data.email}")
             raise InvalidCredentials()
-        logging.info(f"User {user.email} logged in successfully")
         access_token = create_token(str(user.id))
         refresh_token = create_token(
             str(user.id),
             timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS),
             refresh=True,
         )
+        logging.info(f"User {user.email} logged in successfully")
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,

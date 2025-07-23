@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from src.routes.v1 import accounts, auth, users
 from src.database.core import init_db
 from src.core.logging import LogLevel, setup_logging
+from src.core.exception_handler import register_all_errors
 
 setup_logging(LogLevel.info)
 
@@ -36,6 +37,9 @@ app = FastAPI(
         "onComplete": "Ok",
     },
 )
+
+# Register exception handlers
+register_all_errors(app)
 
 # Include routers
 app.include_router(auth.router)

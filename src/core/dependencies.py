@@ -10,10 +10,10 @@ from src.database.core import get_session
 from src.users.service import UserService
 from src.users.schemas import UserRead, UserRole
 from src.core.exceptions import (
-    AccessTokenRequiredError,
-    InsufficientPermissionError,
-    InvalidTokenError,
-    RefreshTokenRequiredError,
+    AccessTokenRequired,
+    InsufficientPermission,
+    InvalidToken,
+    RefreshTokenRequired,
 )
 
 
@@ -30,7 +30,7 @@ class TokenBearer(HTTPBearer):
         token_data = decode_access_token(token)
 
         if not token_data:
-            raise InvalidTokenError()
+            raise InvalidToken()
 
         self.verify_token_data(token_data)
 
@@ -44,14 +44,14 @@ class AccessTokenBearer(TokenBearer):
 
     def verify_token_data(self, token_data: dict) -> None:
         if token_data and token_data.get("refresh"):
-            raise AccessTokenRequiredError()
+            raise AccessTokenRequired()
 
 
 class RefreshTokenBearer(TokenBearer):
 
     def verify_token_data(self, token_data: dict) -> None:
         if not token_data or not token_data.get("refresh"):
-            raise RefreshTokenRequiredError()
+            raise RefreshTokenRequired()
 
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
@@ -77,4 +77,4 @@ class RoleChecker:
         if current_user.role in self.allowed_roles:
             return True
 
-        raise InsufficientPermissionError()
+        raise InsufficientPermission()

@@ -1,77 +1,64 @@
-from fastapi import HTTPException, status
+class BaseApiError(Exception):
+    """Base class for all API errors"""
+
+    pass
 
 
-class UserNotFoundError(HTTPException):
-    def __init__(self, user_id: str):
-        super().__init__(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with ID {user_id} not found",
-        )
+class UserNotFound(BaseApiError):
+    """User with the given email does not exist"""
+
+    pass
 
 
-class UserAlreadyExistsError(HTTPException):
-    def __init__(self, email: str):
-        super().__init__(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"User with email {email} already exists",
-        )
+class UserAlreadyExists(BaseApiError):
+    """User with the given email already exists"""
+
+    pass
 
 
-class InvalidCredentialsError(HTTPException):
-    def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid email or password"
-        )
+class InvalidToken(BaseApiError):
+    """User has provided an invalid or expired token"""
+
+    pass
 
 
-class PasswordMismatchError(HTTPException):
-    def __init__(self):
-        super().__init__(status_code=400, detail="New passwords do not match")
+class RevokedToken(BaseApiError):
+    """User has provided a token that has been revoked"""
+
+    pass
 
 
-class InvalidPasswordError(HTTPException):
-    def __init__(self):
-        super().__init__(status_code=401, detail="Current password is incorrect")
+class AccessTokenRequired(BaseApiError):
+    """User has provided a refresh token when an access token is needed"""
+
+    pass
 
 
-class InvalidTokenError(HTTPException):
-    def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+class RefreshTokenRequired(BaseApiError):
+    """User has provided an access token when a refresh token is needed"""
+
+    pass
 
 
-class UnauthorizedError(HTTPException):
-    def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to perform this action.",
-        )
+class InsufficientPermission(BaseApiError):
+    """User does not have the necessary permissions to perform an action."""
+
+    pass
 
 
-class InsufficientPermissionError(HTTPException):
-    def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have sufficient permissions to access this resource.",
-        )
+class PasswordMismatch(BaseApiError):
+    """User has provided passwords that do not match."""
+
+    pass
 
 
-class AccessTokenRequiredError(HTTPException):
-    def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Please provide a valid access token.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+class InvalidPassword(BaseApiError):
+    """User has provided an invalid password"""
+
+    pass
 
 
-class RefreshTokenRequiredError(HTTPException):
-    def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Please provide a valid refresh token.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+class InvalidCredentials(BaseApiError):
+    """User has provided invalid credentials for login"""
+
+    pass

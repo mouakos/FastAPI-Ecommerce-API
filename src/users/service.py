@@ -17,12 +17,12 @@ from src.core.security import (
     verify_password,
 )
 from src.core.exceptions import (
-    InvalidCredentialsError,
-    InvalidPasswordError,
-    InvalidTokenError,
-    PasswordMismatchError,
-    UserAlreadyExistsError,
-    UserNotFoundError,
+    InvalidPassword,
+    InvalidToken,
+    PasswordMismatch,
+    UserAlreadyExists,
+    UserNotFound,
+    InvalidCredentials,
 )
 from src.models.user import User
 from src.core.config import settings
@@ -52,7 +52,7 @@ class UserService:
             user_id (UUID): User ID to retrieve.
 
         Raises:
-            UserNotFoundError: If the user is not found.
+            UserNotFound: If the user is not found.
 
         Returns:
             UserRead: The retrieved user.
@@ -60,7 +60,7 @@ class UserService:
         user = await db_session.get(User, user_id)
         if not user:
             logging.error(f"User with ID {user_id} not found")
-            raise UserNotFoundError(user_id)
+            raise UserNotFound(user_id)
         logging.info(f"User with ID {user_id} retrieved successfully")
         return UserRead(**user.model_dump())
 
@@ -81,7 +81,7 @@ class UserService:
         ).first()
         if existing_user:
             logging.warning(f"Signup attempt with existing email: {user_data.email}")
-            raise UserAlreadyExistsError(user_data.email)
+            raise UserAlreadyExists()
         user = User(
             **user_data.model_dump(),
             password_hash=generate_password_hash(user_data.password),
@@ -103,7 +103,7 @@ class UserService:
             user_data (dict): Data to update the user with.
 
         Raises:
-            UserNotFoundError: If the user is not found.
+            UserNotFound: If the user is not found.
 
         Returns:
             UserRead: The updated user.
@@ -111,7 +111,7 @@ class UserService:
         user = await db_session.get(User, user_id)
         if not user:
             logging.error(f"User with ID {user_id} not found for update")
-            raise UserNotFoundError(user_id)
+            raise UserNotFound(user_id)
 
         for key, value in user_data.items():
             setattr(user, key, value)
@@ -131,12 +131,12 @@ class UserService:
             user_id (UUID): User ID to delete.
 
         Raises:
-            UserNotFoundError: If the user is not found.
+            UserNotFound: If the user is not found.
         """
         user = await db_session.get(User, user_id)
         if not user:
             logging.error(f"User with ID {user_id} not found for deletion")
-            raise UserNotFoundError(user_id)
+            raise UserNotFound(user_id)
 
         await db_session.delete(user)
         await db_session.commit()
@@ -159,7 +159,7 @@ class UserService:
         ).first()
         if not user or not verify_password(login_data.password, user.password_hash):
             logging.warning(f"Failed login attempt for email: {login_data.email}")
-            raise InvalidCredentialsError()
+            raise InvalidCredentials()
         logging.info(f"User {user.email} logged in successfully")
         access_token = create_token(str(user.id))
         refresh_token = create_token(
@@ -185,7 +185,9 @@ class UserService:
             password_data (PasswordChange): Data containing the new password.
 
         Raises:
-            UserNotFoundError: If the user is not found.
+            UserNotFound: If the user is not found.
+            InvalidPassword: If the current password is incorrect.
+            PasswordMismatch: If the new password and confirmation do not match.
 
         Returns:
             UserRead: The updated user with the new password.
@@ -193,19 +195,19 @@ class UserService:
         user = await db_session.get(User, user_id)
         if not user:
             logging.error(f"User with ID {user_id} not found for password change")
-            raise UserNotFoundError(user_id)
+            raise UserNotFound(user_id)
 
         # Verify current password
         if not verify_password(password_data.current_password, user.password):
             logging.error(f"Current password for user with ID {user_id} is incorrect")
-            raise InvalidPasswordError()
+            raise InvalidPassword()
 
         # Verify new passwords match
         if password_data.new_password != password_data.new_password_confirm:
             logging.warning(
                 f"Password mismatch during change attempt for user ID: {user_id}"
             )
-            raise PasswordMismatchError()
+            raise PasswordMismatch()
 
         user.password_hash = generate_password_hash(password_data.new_password)
         await db_session.commit()
@@ -224,7 +226,7 @@ class UserService:
             role_data (RoleChange): New role data to assign to the user.
 
         Raises:
-            UserNotFoundError: If the user is not found.
+            UserNotFound: If the user is not found.
 
         Returns:
             UserRead: The updated user with the new role.
@@ -232,7 +234,7 @@ class UserService:
         user = await db_session.get(User, user_id)
         if not user:
             logging.error(f"User with ID {user_id} not found for role change")
-            raise UserNotFoundError(user_id)
+            raise UserNotFound(user_id)
 
         user.role = role_data.role.value
         await db_session.commit()
@@ -244,6 +246,14 @@ class UserService:
 
     @staticmethod
     async def refresh_token(token_data: dict) -> TokenResponse:
+        """Refresh the access token if it is still valid.
+
+        Args:
+            token_data (dict): Data containing the token information.
+
+        Returns:
+            TokenResponse: The response containing the new access token and its expiration time.
+        """
         expiry_timestamp = token_data.get("exp")
         if datetime.fromtimestamp(expiry_timestamp) > datetime.now():
             new_access_token = create_token(token_data.get("sub"))
@@ -251,4 +261,4 @@ class UserService:
                 access_token=new_access_token,
                 access_token_expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_SECONDS,
             )
-        return InvalidTokenError()
+        return InvalidToken()

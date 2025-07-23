@@ -28,7 +28,6 @@ class UserCreate(UserBase):
 
 class UserRead(UserBase):
     id: UUID
-    is_active: bool
     date_of_birth: Optional[datetime] = None
     phone_number: Optional[str] = None
     role: UserRole

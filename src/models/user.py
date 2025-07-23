@@ -22,7 +22,6 @@ class User(SQLModel, table=True):
     password_hash: str = Field(nullable=False, exclude=True)
     full_name: str = Field(nullable=False)
     gender: Gender = Field(nullable=False)
-    is_active: bool = Field(default=True, nullable=False)
     date_of_birth: Optional[date] = Field(default=None, nullable=True)
     phone_number: Optional[str] = Field(default=None, nullable=True)
     role: UserRole = Field(default=UserRole.customer, nullable=False)

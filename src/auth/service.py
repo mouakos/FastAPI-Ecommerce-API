@@ -1,8 +1,8 @@
 from src.auth.schemas import TokenResponse, UserCreate, UserLogin, UserRead
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
-from fastapi import HTTPException, status
-
+import logging
+from src.exceptions import InvalidCredentialsError, UserAlreadyExistsError
 from src.models.user import User
 from .utils import get_user_token, verify_password, generate_password_hash
 
@@ -25,11 +25,9 @@ class AuthService:
         user = (
             await db.exec(select(User).where(User.email == login_data.email))
         ).first()
-        if not user or not verify_password(login_data.password, user.hashed_password):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Invalid email or password",
-            )
+        if not user or not verify_password(login_data.password, user.password_hash):
+            logging.warning(f"Failed login attempt for email: {login_data.email}")
+            raise InvalidCredentialsError()
         return get_user_token(str(user.id))
 
     @staticmethod
@@ -48,10 +46,8 @@ class AuthService:
             await db.exec(select(User).where(User.email == user_data.email))
         ).first()
         if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Email already registered",
-            )
+            logging.warning(f"Signup attempt with existing email: {user_data.email}")
+            raise UserAlreadyExistsError(user_data.email)
         user = User(
             **user_data.model_dump(),
             password_hash=generate_password_hash(user_data.password),

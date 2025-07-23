@@ -1,13 +1,20 @@
+import logging
 from typing import Optional
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
+from typing_extensions import Annotated
 from passlib.context import CryptContext
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
 
 
-from src.auth.schemas import TokenResponse
-from src.config import settings
+from src.users.schemas import TokenData, TokenResponse
+from .config import settings
+from .exceptions import InvalidTokenError, UnauthorizedError
 
 passwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 def generate_password_hash(password: str) -> str:
@@ -56,19 +63,58 @@ def create_access_token(data: dict, expires_delta: Optional[int] = None) -> str:
     return token
 
 
-def get_user_token(user_id: str) -> TokenResponse:
+def get_user_token(user_id: str, role: str) -> TokenResponse:
     """Get a user token for a specific user.
 
     Args:
         user_id (str): The ID of the user.
+        role (str): The role of the user.
 
     Returns:
         TokenResponse: A TokenResponse containing the access token, token type, and expiration time.
     """
     access_token_expiry = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     token = create_access_token(
-        data={"sub": user_id}, expires_delta=access_token_expiry
+        data={"sub": user_id, "role": role}, expires_delta=access_token_expiry
     )
-    return TokenResponse(
-        access_token=token, expires_in=access_token_expiry.seconds
-    )
+    return TokenResponse(access_token=token, expires_in=access_token_expiry.seconds)
+
+
+def verify_token(token: str) -> TokenData:
+    """Verify a JWT token and return the token data.
+
+    Args:
+        token (str): The JWT token to verify.
+
+    Raises:
+        InvalidTokenError: If the token is invalid or expired.
+
+    Returns:
+        TokenData: The decoded token data.
+    """
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        user_id: str = payload.get("sub")
+        role: str = payload.get("role")
+        return TokenData(user_id=user_id, role=role)
+    except JWTError as e:
+        logging.warning(f"Token verification failed: {str(e)}")
+        raise InvalidTokenError()
+
+
+def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]) -> TokenData:
+    return verify_token(token)
+
+
+CurrentUser = Annotated[TokenData, Depends(get_current_user)]
+
+
+def get_admin_user(current_user: CurrentUser) -> TokenData:
+    if current_user.role != "admin":
+        raise UnauthorizedError()
+    return current_user
+
+
+CurrentAdminUser = Annotated[TokenData, Depends(get_admin_user)]

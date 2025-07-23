@@ -1,9 +1,9 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
-from src.routes import auth
+from src.routes.v1 import accounts, auth, users
 from src.database.core import init_db
-from .logging import LogLevel, setup_logging
+from src.core.logging import LogLevel, setup_logging
 
 setup_logging(LogLevel.info)
 
@@ -39,3 +39,5 @@ app = FastAPI(
 
 # Include routers
 app.include_router(auth.router)
+app.include_router(accounts.router)
+app.include_router(users.router)

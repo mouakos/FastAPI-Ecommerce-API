@@ -3,8 +3,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.auth.schemas import UserCreate, UserLogin, UserRead, TokenResponse
-from src.auth.service import AuthService
+from src.users.schemas import UserRead, UserCreate
+from src.users.service import UserService
+from src.users.schemas import UserLogin, TokenResponse
 from src.database.core import get_session
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
@@ -19,7 +20,7 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
     status_code=status.HTTP_201_CREATED,
 )
 async def signup(db_session: DbSession, user_create: UserCreate) -> UserRead:
-    return await AuthService.signup(db_session, user_create)
+    return await UserService.create_user(db_session, user_create)
 
 
 @router.post("/login", response_model=TokenResponse, summary="User Login")
@@ -28,4 +29,4 @@ async def login(
 ) -> TokenResponse:
 
     login_data = UserLogin(email=form_data.username, password=form_data.password)
-    return await AuthService.login(db_session, login_data)
+    return await UserService.login(db_session, login_data)

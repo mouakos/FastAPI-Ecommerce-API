@@ -63,19 +63,19 @@ def create_access_token(data: dict, expires_delta: Optional[int] = None) -> str:
     return token
 
 
-def get_user_token(user_id: str, role: str) -> TokenResponse:
+def get_user_token(token_data: TokenData) -> TokenResponse:
     """Get a user token for a specific user.
 
     Args:
-        user_id (str): The ID of the user.
-        role (str): The role of the user.
+        token_data (TokenData): The token data containing user ID and role.
 
     Returns:
         TokenResponse: A TokenResponse containing the access token, token type, and expiration time.
     """
     access_token_expiry = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     token = create_access_token(
-        data={"sub": user_id, "role": role}, expires_delta=access_token_expiry
+        data={"sub": token_data.user_id, "role": token_data.role},
+        expires_delta=access_token_expiry,
     )
     return TokenResponse(access_token=token, expires_in=access_token_expiry.seconds)
 

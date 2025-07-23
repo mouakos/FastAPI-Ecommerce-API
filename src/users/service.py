@@ -5,6 +5,7 @@ from uuid import UUID
 from src.users.schemas import (
     PasswordUpdate,
     RoleUpdate,
+    TokenData,
     TokenResponse,
     UserCreate,
     UserLogin,
@@ -153,7 +154,7 @@ class UserService:
         if not user or not verify_password(login_data.password, user.password_hash):
             logging.warning(f"Failed login attempt for email: {login_data.email}")
             raise InvalidCredentialsError()
-        return get_user_token(str(user.id), user.role.value)
+        return get_user_token(TokenData(user_id=str(user.id), role=user.role))
 
     @staticmethod
     async def change_user_password(

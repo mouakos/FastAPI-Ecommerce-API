@@ -25,6 +25,15 @@ class TokenBearer(HTTPBearer):
         self.auto_error = auto_error
 
     async def __call__(self, request: Request) -> Optional[dict]:
+        """Extract and decode the token from the request.
+        Args:
+            request (Request): The incoming request.
+        Raises:
+            InvalidToken: If the token is invalid or expired.
+            RevokedToken: If the token has been revoked.
+        Returns:
+            Optional[dict]: The decoded token data if valid, None otherwise.
+        """
         credentials = await super().__call__(request)
 
         token = credentials.credentials
@@ -43,20 +52,43 @@ class TokenBearer(HTTPBearer):
         return token_data
 
     def verify_token_data(self, token_data: dict) -> None:
+        """Verify the token data.
+        This method should be overridden in subclasses to implement specific token verification logic.
+
+        Args:
+            token_data (dict): The decoded token data.
+
+        Raises:
+            NotImplementedError: If the method is not implemented.
+        """
         raise NotImplementedError("please override this method in the subclass")
 
 
 class AccessTokenBearer(TokenBearer):
-
     def verify_token_data(self, token_data: dict) -> None:
+        """Verify the access token data.
+
+        Args:
+            token_data (dict): The decoded token data.
+
+        Raises:
+            AccessTokenRequired: If the token data does not contain 'access'.
+        """
         if token_data and token_data.get("refresh"):
             logging.warning("Access token used with refresh token data")
             raise AccessTokenRequired()
 
 
 class RefreshTokenBearer(TokenBearer):
-
     def verify_token_data(self, token_data: dict) -> None:
+        """Verify the refresh token data.
+
+        Args:
+            token_data (dict): The decoded token data.
+
+        Raises:
+            RefreshTokenRequired: If the token data does not contain 'refresh'.
+        """
         if not token_data or not token_data.get("refresh"):
             logging.warning("Refresh token used with access token data")
             raise RefreshTokenRequired()
@@ -69,6 +101,15 @@ async def get_current_user(
     token: Annotated[dict, Depends(AccessTokenBearer())],
     db_session: DbSession,
 ) -> UserRead:
+    """Get the current user based on the access token.
+
+    Args:
+        token (Annotated[dict, Depends): The decoded access token data.
+        db_session (DbSession): The database session.
+
+    Returns:
+        UserRead: The current user.
+    """
     user_id = token.get("sub")
     return await UserService.get_user(db_session, uuid.UUID(user_id))
 
@@ -81,7 +122,14 @@ class RoleChecker:
         self.allowed_roles = allowed_roles
 
     def __call__(self, current_user: UserRead = Depends(get_current_user)) -> bool:
-
+        """Check if the current user has one of the allowed roles.
+        Args:
+            current_user (UserRead): The current user.
+        Raises:
+            InsufficientPermission: If the user does not have sufficient permissions.
+        Returns:
+            bool: True if the user has sufficient permissions, False otherwise.
+        """
         if current_user.role in self.allowed_roles:
             return True
         logging.warning(f"User {current_user.id} does not have sufficient permissions")

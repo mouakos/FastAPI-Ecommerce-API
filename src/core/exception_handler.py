@@ -17,6 +17,7 @@ from src.core.exceptions import (
     UserNotFound,
 )
 
+
 def create_exception_handler(
     status_code: int, initial_detail: Any
 ) -> Callable[[Request, Exception], JSONResponse]:
@@ -32,7 +33,7 @@ def register_all_errors(app: FastAPI):
     app.add_exception_handler(
         UserAlreadyExists,
         create_exception_handler(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_409_CONFLICT,
             initial_detail={
                 "message": "User with email already exists",
                 "error_code": "user_exists",
@@ -87,8 +88,8 @@ def register_all_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_401_UNAUTHORIZED,
             initial_detail={
-                "message": "Please provide a valid access token",
-                "resolution": "Please get an access token",
+                "message": "Invalid access token",
+                "resolution": "Please provide a valid access token or get a new one",
                 "error_code": "access_token_required",
             },
         ),
@@ -98,8 +99,8 @@ def register_all_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_403_FORBIDDEN,
             initial_detail={
-                "message": "Please provide a valid refresh token",
-                "resolution": "Please get an refresh token",
+                "message": "Invalid refresh token",
+                "resolution": "Please provide a valid refresh token or get a new one",
                 "error_code": "refresh_token_required",
             },
         ),

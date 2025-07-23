@@ -29,7 +29,6 @@ from src.core.config import settings
 
 
 class UserService:
-
     @staticmethod
     async def get_all_users(db_session: AsyncSession) -> list[UserRead]:
         """Retrieve all users.
@@ -72,6 +71,9 @@ class UserService:
         Args:
             db (AsyncSession): Database session.
             user_data (UserCreate): User creation data.
+
+        Raises:
+            UserAlreadyExists: If a user with the same email already exists.
 
         Returns:
             UserRead: Created user.
@@ -151,6 +153,9 @@ class UserService:
         Args:
             db (AsyncSession): Database session.
             login_data (UserLogin): User login data.
+
+        raises:
+            InvalidCredentials: If the email or password is invalid.
 
         Returns:
             TokenResponse: User login token.
@@ -251,6 +256,9 @@ class UserService:
 
         Args:
             token_data (dict): Data containing the token information.
+
+        Raises:
+            InvalidToken: If the token is invalid or expired.
 
         Returns:
             TokenResponse: The response containing the new access token and its expiration time.

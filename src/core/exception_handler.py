@@ -1,6 +1,7 @@
 from typing import Any, Callable
 from fastapi import Request, status, FastAPI
 from fastapi.responses import JSONResponse
+import logging
 
 from src.core.exceptions import (
     AccessTokenRequired,
@@ -15,7 +16,6 @@ from src.core.exceptions import (
     UserAlreadyExists,
     UserNotFound,
 )
-
 
 def create_exception_handler(
     status_code: int, initial_detail: Any
@@ -136,3 +136,17 @@ def register_all_errors(app: FastAPI):
             },
         ),
     )
+
+    @app.exception_handler(status.HTTP_500_INTERNAL_SERVER_ERROR)
+    async def internal_server_error(request, exc):
+        logging.error(
+            f"Internal Server Error: {exc}",
+            extra={"request": request, "exception": exc},
+        )
+        return JSONResponse(
+            content={
+                "message": "Oops! Something went wrong",
+                "error_code": "server_error",
+            },
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

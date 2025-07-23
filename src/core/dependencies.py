@@ -5,7 +5,7 @@ from typing_extensions import Annotated
 from fastapi import Request
 from fastapi.security import HTTPBearer
 from sqlmodel.ext.asyncio.session import AsyncSession
-from src.core.security import decode_access_token
+from src.core.security import decode_access_token, token_blocklist
 from src.database.core import get_session
 from src.users.service import UserService
 from src.users.schemas import UserRead, UserRole
@@ -14,6 +14,7 @@ from src.core.exceptions import (
     InsufficientPermission,
     InvalidToken,
     RefreshTokenRequired,
+    RevokedToken,
 )
 
 
@@ -28,6 +29,9 @@ class TokenBearer(HTTPBearer):
         token = credentials.credentials
 
         token_data = decode_access_token(token)
+
+        if token_data.get("jti") in token_blocklist:
+            raise RevokedToken()
 
         if not token_data:
             raise InvalidToken()

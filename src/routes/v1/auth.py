@@ -1,17 +1,17 @@
-from typing_extensions import Annotated
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, status
-from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.core.dependencies import RefreshTokenBearer
+from src.core.dependencies import AccessTokenBearer, DbSession, RefreshTokenBearer
 from src.users.schemas import UserRead, UserCreate
 from src.users.service import UserService
 from src.users.schemas import UserLogin, TokenResponse
-from src.database.core import get_session
+from src.core.security import token_blocklist
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
-DbSession = Annotated[AsyncSession, Depends(get_session)]
+refresh_token_bearer = RefreshTokenBearer()
+access_token_bearer = AccessTokenBearer()
 
 
 @router.post(
@@ -33,11 +33,20 @@ async def login(
     return await UserService.login(db_session, login_data)
 
 
-refresh_token_bearer = RefreshTokenBearer()
-
-
-@router.post("/refresh", response_model=TokenResponse, summary="Refresh Access Token")
+@router.get("/refresh", response_model=TokenResponse, summary="Refresh Access Token")
 async def refresh_token(
     token_data: dict = Depends(refresh_token_bearer),
 ) -> TokenResponse:
     return await UserService.refresh_token(token_data)
+
+
+@router.get("/logout", summary="Logout User")
+async def revoke_token(
+    token_data: dict = Depends(access_token_bearer),
+) -> JSONResponse:
+    jti = token_data.get("jti")
+    token_blocklist.add(jti)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"message": "logout successfully"},
+    )

@@ -9,6 +9,9 @@ from .config import settings
 
 passwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# TODO -- This should be replaced with a proper database or cache in production (e.g., Redis)
+token_blocklist = set()
+
 
 def generate_password_hash(password: str) -> str:
     """Generate a hashed password using bcrypt.
@@ -49,10 +52,7 @@ def create_token(
     Returns:
         str: The encoded token.
     """
-    payload = {"sub": user_id}
-    if refresh:
-        payload.update({"jti": str(uuid4())})
-        payload["refresh"] = refresh
+    payload = {"sub": user_id, "jti": str(uuid4()), "refresh": refresh}
     payload["exp"] = datetime.now() + (
         expires_delta or timedelta(seconds=settings.JWT_ACCESS_TOKEN_EXPIRE_SECONDS)
     )

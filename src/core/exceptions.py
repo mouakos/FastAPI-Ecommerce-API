@@ -49,3 +49,29 @@ class UnauthorizedError(HTTPException):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to perform this action.",
         )
+
+
+class InsufficientPermissionError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have sufficient permissions to access this resource.",
+        )
+
+
+class AccessTokenRequiredError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Please provide a valid access token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+class RefreshTokenRequiredError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Please provide a valid refresh token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

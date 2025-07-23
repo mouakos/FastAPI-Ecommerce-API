@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 import logging
@@ -5,21 +6,26 @@ from uuid import UUID
 from src.users.schemas import (
     PasswordUpdate,
     RoleUpdate,
-    TokenData,
     TokenResponse,
     UserCreate,
     UserLogin,
     UserRead,
 )
-from src.core.security import generate_password_hash, get_user_token, verify_password
+from src.core.security import (
+    create_token,
+    generate_password_hash,
+    verify_password,
+)
 from src.core.exceptions import (
     InvalidCredentialsError,
     InvalidPasswordError,
+    InvalidTokenError,
     PasswordMismatchError,
     UserAlreadyExistsError,
     UserNotFoundError,
 )
 from src.models.user import User
+from src.core.config import settings
 
 
 class UserService:
@@ -154,7 +160,18 @@ class UserService:
         if not user or not verify_password(login_data.password, user.password_hash):
             logging.warning(f"Failed login attempt for email: {login_data.email}")
             raise InvalidCredentialsError()
-        return get_user_token(TokenData(user_id=str(user.id), role=user.role))
+        logging.info(f"User {user.email} logged in successfully")
+        access_token = create_token(str(user.id))
+        refresh_token = create_token(
+            str(user.id),
+            timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS),
+            refresh=True,
+        )
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            access_token_expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_SECONDS,
+        )
 
     @staticmethod
     async def change_user_password(
@@ -224,3 +241,14 @@ class UserService:
             f"Role for user with ID {user_id} changed to {role_data.role.value} successfully"
         )
         return UserRead(**user.model_dump())
+
+    @staticmethod
+    async def refresh_token(token_data: dict) -> TokenResponse:
+        expiry_timestamp = token_data.get("exp")
+        if datetime.fromtimestamp(expiry_timestamp) > datetime.now():
+            new_access_token = create_token(token_data.get("sub"))
+            return TokenResponse(
+                access_token=new_access_token,
+                access_token_expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_SECONDS,
+            )
+        return InvalidTokenError()

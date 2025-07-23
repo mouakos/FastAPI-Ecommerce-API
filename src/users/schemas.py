@@ -51,23 +51,9 @@ class UserLogin(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "Bearer"
-    expires_in: int
-
-
-class TokenData(BaseModel):
-    user_id: str
-    role: str
-
-    def get_user_id(self) -> Optional[UUID]:
-        """Retrieve the user ID from the token data.
-
-        Returns:
-            Optional[UUID]: The user ID if present, otherwise None.
-        """
-        if not self.user_id:
-            return None
-        return UUID(self.user_id)
+    access_token_expires_in: int
 
 
 class PasswordUpdate(BaseModel):

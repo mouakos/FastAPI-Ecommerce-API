@@ -3,9 +3,10 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./ecommerce_dev.db"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    SECRET_KEY: str = "your_secret_key"
-    ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_SECONDS: int = 60
+    JWT_SECRET_KEY: str = "your_jwt_secret_key"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     class Config:
         env_file = ".env"

@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from src.core.dependencies import RefreshTokenBearer
 from src.users.schemas import UserRead, UserCreate
 from src.users.service import UserService
 from src.users.schemas import UserLogin, TokenResponse
@@ -30,3 +31,13 @@ async def login(
 
     login_data = UserLogin(email=form_data.username, password=form_data.password)
     return await UserService.login(db_session, login_data)
+
+
+refresh_token_bearer = RefreshTokenBearer()
+
+
+@router.post("/refresh", response_model=TokenResponse, summary="Refresh Access Token")
+async def refresh_token(
+    token_data: dict = Depends(refresh_token_bearer),
+) -> TokenResponse:
+    return await UserService.refresh_token(token_data)

@@ -1,27 +1,23 @@
 from uuid import UUID
-from typing_extensions import Annotated
 from fastapi import APIRouter, Depends, status
-from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.users.schemas import RoleUpdate, UserRead, UserUpdate
+from src.core.dependencies import DbSession, RoleChecker
+from src.users.schemas import RoleUpdate, UserRead, UserRole, UserUpdate
 from src.users.service import UserService
-from src.core.security import CurrentAdminUser
-from src.database.core import get_session
 
 router = APIRouter(prefix="/api/v1/users", tags=["Users"])
 
-DbSession = Annotated[AsyncSession, Depends(get_session)]
+role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 
 
 @router.get(
     "/",
     response_model=list[UserRead],
     status_code=status.HTTP_200_OK,
-    summary="Get All Users. Requires Admin Role",
+    summary="Get All Users",
+    dependencies=[role_checker_admin],
 )
-async def get_all_users(
-    db_session: DbSession, current_user: CurrentAdminUser
-) -> list[UserRead]:
+async def get_all_users(db_session: DbSession) -> list[UserRead]:
     return await UserService.get_all_users(db_session)
 
 
@@ -29,11 +25,10 @@ async def get_all_users(
     "/{user_id}",
     response_model=UserRead,
     status_code=status.HTTP_200_OK,
-    summary="Get User by ID. Requires Admin Role",
+    summary="Get User by ID",
+    dependencies=[role_checker_admin],
 )
-async def get_user(
-    db_session: DbSession, current_user: CurrentAdminUser, user_id: str
-) -> UserRead:
+async def get_user(db_session: DbSession, user_id: str) -> UserRead:
     user_id = UUID(user_id)
     return await UserService.get_user(db_session, user_id)
 
@@ -42,11 +37,11 @@ async def get_user(
     "/{user_id}",
     response_model=UserRead,
     status_code=status.HTTP_200_OK,
-    summary="Update User by ID. Requires Admin Role",
+    summary="Update User by ID",
+    dependencies=[role_checker_admin],
 )
 async def update_user(
     db_session: DbSession,
-    current_user: CurrentAdminUser,
     user_id: str,
     user_data: UserUpdate,
 ) -> UserRead:
@@ -60,11 +55,11 @@ async def update_user(
     "/{user_id}/role-change",
     response_model=UserRead,
     status_code=status.HTTP_200_OK,
-    summary="Update User Role by ID. Requires Admin Role",
+    summary="Update User Role by ID",
+    dependencies=[role_checker_admin],
 )
 async def change_user_role(
     db_session: DbSession,
-    current_user: CurrentAdminUser,
     user_id: str,
     role_data: RoleUpdate,
 ) -> UserRead:
@@ -76,10 +71,9 @@ async def change_user_role(
 @router.delete(
     "/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Delete User by ID. Requires Admin Role",
+    summary="Delete User by ID",
+    dependencies=[role_checker_admin],
 )
-async def delete_user(
-    db_session: DbSession, current_user: CurrentAdminUser, user_id: str
-) -> None:
+async def delete_user(db_session: DbSession, user_id: str) -> None:
     user_id = UUID(user_id)
     await UserService.delete_user(db_session, user_id)

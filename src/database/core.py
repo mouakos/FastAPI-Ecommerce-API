@@ -1,14 +1,13 @@
 from collections.abc import AsyncGenerator
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from src.models import *  # noqa: F403
 from src.config import settings
 
-engine: AsyncEngine = create_async_engine(
-    settings.DATABASE_URL, echo=True, future=True, expire_on_commit=False
-)
+engine = create_async_engine(settings.DATABASE_URL, echo=True)
+async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def init_db():

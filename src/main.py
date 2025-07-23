@@ -1,10 +1,23 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
+from src.routes import auth
+from src.database.core import init_db
 from .logging import LogLevel, setup_logging
 
 setup_logging(LogLevel.info)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize resources here if needed
+    await init_db()
+    yield
+    # Cleanup resources here if needed
+
+
 app = FastAPI(
+    lifespan=lifespan,
     description="This is a simple e-commerce API built with FastAPI.",
     docs_url="/api/v1/docs",
     redoc_url="/api/v1/redoc",
@@ -24,7 +37,5 @@ app = FastAPI(
     },
 )
 
-
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to FastAPI Ecommerce API"}
+# Include routers
+app.include_router(auth.router)

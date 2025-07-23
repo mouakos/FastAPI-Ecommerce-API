@@ -24,11 +24,29 @@ app = FastAPI(
     redoc_url="/api/v1/redoc",
     openapi_url="/api/v1/openapi.json",
     title="E-commerce API",
-    version="1.0.0",
+    license_info={
+        "name": "MIT License",
+        "url": "https://opensource.org/license/mit/",
+    },
+    version="v1",
     contact={
         "name": "Stephane Mouako",
         "url": "https://github.com/mouakos",
     },
+    openapi_tags=[
+        {
+            "name": "Auth",
+            "description": "Operations related to user authentication.",
+        },
+        {
+            "name": "Accounts",
+            "description": "Operations related to user accounts.",
+        },
+        {
+            "name": "Users",
+            "description": "Operations related to user management.",
+        },
+    ],
     swagger_ui_parameters={
         "syntaxHighlight.theme": "monokai",
         "layout": "BaseLayout",

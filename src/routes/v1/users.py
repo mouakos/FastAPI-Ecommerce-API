@@ -68,6 +68,7 @@ async def change_user_role(
     user_id: str,
     role_data: RoleUpdate,
 ) -> UserRead:
+    # TODO - Avoid current user to change own role
     user_id = UUID(user_id)
     return await UserService.change_user_role(db_session, user_id, role_data)
 

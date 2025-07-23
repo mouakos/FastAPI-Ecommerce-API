@@ -41,7 +41,7 @@ class AccountUpdate(BaseModel):
 
 
 class UserUpdate(AccountUpdate):
-    role: Optional[UserRole] = None
+    pass
 
 
 class UserLogin(BaseModel):

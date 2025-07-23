@@ -1,5 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import JSONResponse
 
 from src.core.dependencies import DbSession, RoleChecker
 from src.users.schemas import RoleUpdate, UserRead, UserRole, UserUpdate
@@ -70,10 +71,13 @@ async def change_user_role(
 
 @router.delete(
     "/{user_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete User by ID",
     dependencies=[role_checker_admin],
 )
-async def delete_user(db_session: DbSession, user_id: str) -> None:
+async def delete_user(db_session: DbSession, user_id: str) -> JSONResponse:
     user_id = UUID(user_id)
     await UserService.delete_user(db_session, user_id)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"message": "User deleted successfully"},
+    )

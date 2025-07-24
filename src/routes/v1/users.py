@@ -29,8 +29,7 @@ async def get_all_users(db_session: DbSession) -> list[UserRead]:
     summary="Get User by ID",
     dependencies=[role_checker_admin],
 )
-async def get_user(db_session: DbSession, user_id: str) -> UserRead:
-    user_id = UUID(user_id)
+async def get_user(db_session: DbSession, user_id: UUID) -> UserRead:
     return await UserService.get_user(db_session, user_id)
 
 
@@ -43,10 +42,9 @@ async def get_user(db_session: DbSession, user_id: str) -> UserRead:
 )
 async def update_user(
     db_session: DbSession,
-    user_id: str,
+    user_id: UUID,
     user_data: UserUpdate,
 ) -> UserRead:
-    user_id = UUID(user_id)
     return await UserService.update_user(
         db_session, user_id, user_data.model_dump(exclude_unset=True)
     )
@@ -61,11 +59,10 @@ async def update_user(
 )
 async def change_user_role(
     db_session: DbSession,
-    user_id: str,
+    user_id: UUID,
     role_data: RoleUpdate,
 ) -> UserRead:
     # TODO - Avoid current user to change own role
-    user_id = UUID(user_id)
     return await UserService.change_user_role(db_session, user_id, role_data)
 
 
@@ -74,8 +71,7 @@ async def change_user_role(
     summary="Delete User by ID",
     dependencies=[role_checker_admin],
 )
-async def delete_user(db_session: DbSession, user_id: str) -> JSONResponse:
-    user_id = UUID(user_id)
+async def delete_user(db_session: DbSession, user_id: UUID) -> JSONResponse:
     await UserService.delete_user(db_session, user_id)
     return JSONResponse(
         status_code=status.HTTP_200_OK,

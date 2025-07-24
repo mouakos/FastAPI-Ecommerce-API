@@ -18,7 +18,7 @@ class CategoryBase(BaseModel):
 
 
 class CategoryCreate(CategoryBase):
-    parent_id: Optional[UUID] = None
+    pass
 
 
 class CategoryUpdate(BaseModel):
@@ -27,18 +27,8 @@ class CategoryUpdate(BaseModel):
         None, max_length=100, pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$"
     )
     description: Optional[str] = None
-    parent_id: Optional[UUID] = None
 
 
 class CategoryRead(CategoryBase):
     id: UUID
-    parent_id: Optional[UUID]
     created_at: datetime
-
-
-class CategoryReadDetail(CategoryRead):
-    children: list["CategoryReadDetail"] = Field(default_factory=list)
-
-
-# This is used to handle circular references in Pydantic models
-CategoryReadDetail.model_rebuild()

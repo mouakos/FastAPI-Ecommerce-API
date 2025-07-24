@@ -1,10 +1,10 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
+from fastapi_pagination import Page
 from src.categories.schemas import (
     CategoryCreate,
     CategoryRead,
-    CategoryReadDetail,
     CategoryUpdate,
 )
 from src.core.dependencies import DbSession, RoleChecker
@@ -18,28 +18,19 @@ role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 
 
 # --- Public Endpoints ---
-@router.get("/", response_model=list[CategoryReadDetail], summary="List all Categories")
-async def list_categories(
-    db: DbSession,
-    parent_id: UUID | None = Query(None),
-    depth: int = Query(1, ge=1, le=3),  # Limit recursion depth
-):
-    return await CategoryService.get_category_tree(db, parent_id, depth)
+@router.get("/", response_model=Page[CategoryRead], summary="List all Categories")
+async def list_categories(db: DbSession):
+    return await CategoryService.get_category_tree(db)
 
 
 @router.get(
-    "/{category_id}", response_model=CategoryReadDetail, summary="Get Category Details"
+    "/{category_id}", response_model=CategoryRead, summary="Get Category Details"
 )
 async def get_category(
     db: DbSession,
     category_id: UUID,
-    include_children: bool = False,
 ):
-    return await CategoryService.get_category(
-        db,
-        category_id,
-        include_children=include_children,
-    )
+    return await CategoryService.get_category(db, category_id)
 
 
 # --- Admin Endpoints ---

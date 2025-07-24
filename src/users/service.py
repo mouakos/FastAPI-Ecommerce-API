@@ -39,8 +39,8 @@ class UserService:
         Returns:
             list[UserRead]: A list of all users.
         """
-        users = await db_session.exec(select(User).order_by(User.created_at()))
-        return [UserRead.model_validate(user) for user in users.all()]
+        users = await db_session.exec(select(User).order_by(User.full_name))
+        return [UserRead(**user.model_dump()) for user in users.all()]
 
     @staticmethod
     async def get_user(db_session: AsyncSession, user_id: UUID) -> UserRead:
@@ -122,7 +122,7 @@ class UserService:
             for key, value in user_data.items():
                 setattr(user, key, value)
 
-            db_session.add(user)
+            user.updated_at = datetime.utcnow()
 
         await db_session.refresh(user)
         logging.info(f"User with ID {user_id} updated successfully")
@@ -222,6 +222,7 @@ class UserService:
                 raise PasswordMismatch()
 
             user.password_hash = generate_password_hash(password_data.new_password)
+            user.updated_at = datetime.utcnow()
 
         await db_session.refresh(user)
         logging.info(f"Password for user with ID {user_id} changed successfully")
@@ -250,6 +251,7 @@ class UserService:
                 raise UserNotFound(user_id)
 
             user.role = role_data.role.value
+            user.updated_at = datetime.utcnow()
 
         await db_session.refresh(user)
         logging.info(

@@ -74,3 +74,15 @@ class CategoryAlreadyExists(BaseApiError):
     """Category with the given name or slug already exists"""
 
     pass
+
+
+class ProductNotFound(BaseApiError):
+    """Product with the given ID does not exist"""
+
+    pass
+
+
+class ProductAlreadyExists(BaseApiError):
+    """Product with the given SKU already exists"""
+
+    pass

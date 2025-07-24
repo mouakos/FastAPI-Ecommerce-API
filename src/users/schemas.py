@@ -23,7 +23,7 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=6, max_length=50)
+    password: str = Field(..., min_length=6, max_length=50, exclude=True)
 
 
 class UserRead(UserBase):
@@ -32,6 +32,7 @@ class UserRead(UserBase):
     phone_number: Optional[str] = None
     role: UserRole
     created_at: datetime
+    updated_at: datetime
 
 
 class AccountUpdate(BaseModel):

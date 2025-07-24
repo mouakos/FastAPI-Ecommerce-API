@@ -13,6 +13,8 @@ from src.core.exceptions import (
     InvalidPassword,
     InvalidToken,
     PasswordMismatch,
+    ProductAlreadyExists,
+    ProductNotFound,
     RefreshTokenRequired,
     RevokedToken,
     UserAlreadyExists,
@@ -155,6 +157,28 @@ def register_all_errors(app: FastAPI):
             initial_detail={
                 "message": "Category with this name already exists",
                 "error_code": "category_already_exists",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        ProductNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            initial_detail={
+                "message": "Product not found",
+                "error_code": "product_not_found",
+            },
+        ),
+    )
+    
+    app.add_exception_handler(
+        ProductAlreadyExists,
+        create_exception_handler(
+            status_code=status.HTTP_409_CONFLICT,
+            initial_detail={
+                "message": "Product with this SKU already exists",
+                "error_code": "product_already_exists",
             },
         ),
     )

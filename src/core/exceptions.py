@@ -74,21 +74,3 @@ class CategoryAlreadyExists(BaseApiError):
     """Category with the given name or slug already exists"""
 
     pass
-
-
-class ParentCategoryNotFound(BaseApiError):
-    """Parent category with the given ID does not exist"""
-
-    pass
-
-
-class InvalidCategoryHierarchy(BaseApiError):
-    """Category cannot be its own parent or a parent of itself indirectly"""
-
-    pass
-
-
-class CategoryHasChildren(BaseApiError):
-    """Category has child categories and cannot be deleted"""
-
-    pass

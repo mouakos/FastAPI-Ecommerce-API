@@ -7,14 +7,11 @@ from src.core.exceptions import (
     AccessTokenRequired,
     BaseApiError,
     CategoryAlreadyExists,
-    CategoryHasChildren,
     CategoryNotFound,
     InsufficientPermission,
-    InvalidCategoryHierarchy,
     InvalidCredentials,
     InvalidPassword,
     InvalidToken,
-    ParentCategoryNotFound,
     PasswordMismatch,
     RefreshTokenRequired,
     RevokedToken,
@@ -162,40 +159,8 @@ def register_all_errors(app: FastAPI):
         ),
     )
 
-    app.add_exception_handler(
-        ParentCategoryNotFound,
-        create_exception_handler(
-            status_code=status.HTTP_404_NOT_FOUND,
-            initial_detail={
-                "message": "Parent category not found",
-                "resolution": "Please ensure the parent category ID is correct",
-                "error_code": "parent_category_not_found",
-            },
-        ),
-    )
-    app.add_exception_handler(
-        InvalidCategoryHierarchy,
-        create_exception_handler(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            initial_detail={
-                "message": "A category cannot be its own parent or a parent of itself indirectly.",
-                "resolution": "Please check the parent-child relationship of the categories",
-                "error_code": "invalid_category_hierarchy",
-            },
-        ),
-    )
-    app.add_exception_handler(
-        CategoryHasChildren,
-        create_exception_handler(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            initial_detail={
-                "message": "The category has child categories and cannot be deleted.",
-                "resolution": "Please delete or reassign child categories before deleting this category",
-                "error_code": "category_has_children",
-            },
-        ),
-    )
-
+    
+    
     @app.exception_handler(status.HTTP_500_INTERNAL_SERVER_ERROR)
     async def internal_server_error(request, exc):
         logging.error(

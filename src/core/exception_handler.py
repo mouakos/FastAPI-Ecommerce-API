@@ -7,6 +7,7 @@ from src.core.exceptions import (
     AccessTokenRequired,
     BaseApiError,
     CategoryAlreadyExists,
+    CategoryHasProducts,
     CategoryNotFound,
     InsufficientPermission,
     InvalidCredentials,
@@ -38,6 +39,7 @@ def register_all_errors(app: FastAPI):
             status_code=status.HTTP_409_CONFLICT,
             initial_detail={
                 "message": "User with email already exists",
+                "resolution": "Please choose a different email",
                 "error_code": "user_exists",
             },
         ),
@@ -59,7 +61,8 @@ def register_all_errors(app: FastAPI):
             status_code=status.HTTP_400_BAD_REQUEST,
             initial_detail={
                 "message": "The provided email or password is invalid",
-                "error_code": "invalid_email_or_password",
+                "resolution": "Please check your email and password",
+                "error_code": "invalid_credentials",
             },
         ),
     )
@@ -113,6 +116,7 @@ def register_all_errors(app: FastAPI):
             status_code=status.HTTP_401_UNAUTHORIZED,
             initial_detail={
                 "message": "You do not have enough permissions to perform this action",
+                "resolution": "Please check your permissions or contact an administrator",
                 "error_code": "insufficient_permissions",
             },
         ),
@@ -135,6 +139,7 @@ def register_all_errors(app: FastAPI):
             status_code=status.HTTP_401_UNAUTHORIZED,
             initial_detail={
                 "message": "Password is invalid",
+                "resolution": "Please provide a valid password",
                 "error_code": "invalid_password",
             },
         ),
@@ -145,6 +150,7 @@ def register_all_errors(app: FastAPI):
             status_code=status.HTTP_404_NOT_FOUND,
             initial_detail={
                 "message": "Category not found",
+                "resolution": "Please check the category ID",
                 "error_code": "category_not_found",
             },
         ),
@@ -156,7 +162,8 @@ def register_all_errors(app: FastAPI):
             status_code=status.HTTP_409_CONFLICT,
             initial_detail={
                 "message": "Category with this name already exists",
-                "error_code": "category_already_exists",
+                "resolution": "Please choose a different name",
+                "error_code": "category_exists",
             },
         ),
     )
@@ -167,6 +174,7 @@ def register_all_errors(app: FastAPI):
             status_code=status.HTTP_404_NOT_FOUND,
             initial_detail={
                 "message": "Product not found",
+                "resolution": "Please check the product ID",
                 "error_code": "product_not_found",
             },
         ),
@@ -177,8 +185,21 @@ def register_all_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_409_CONFLICT,
             initial_detail={
-                "message": "Product with the same name SKU already exists",
-                "error_code": "product_already_exists",
+                "message": "Product with the same name or SKU already exists",
+                "resolution": "Please choose a different name or SKU",
+                "error_code": "product_exists",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        CategoryHasProducts,
+        create_exception_handler(
+            status_code=status.HTTP_409_CONFLICT,
+            initial_detail={
+                "message": "Category has associated products and cannot be deleted",
+                "resolution": "Please remove products from this category before deleting",
+                "error_code": "category_has_products",
             },
         ),
     )

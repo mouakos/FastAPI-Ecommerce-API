@@ -12,7 +12,11 @@ from src.categories.schemas import (
     CategoryUpdate,
 )
 from src.models.category import Category
-from src.core.exceptions import CategoryAlreadyExists, CategoryNotFound
+from src.core.exceptions import (
+    CategoryAlreadyExists,
+    CategoryHasProducts,
+    CategoryNotFound,
+)
 
 
 class CategoryService:
@@ -141,9 +145,14 @@ class CategoryService:
             category_id (UUID): The ID of the category to delete.
         Raises:
             CategoryNotFound: If the category is not found.
+            CategoryHasProducts: If the category has associated products.
         """
         async with db.begin():
             category = await db.get(Category, category_id)
             if not category:
                 raise CategoryNotFound()
+
+            if category.products:
+                raise CategoryHasProducts()
+
             await db.delete(category)

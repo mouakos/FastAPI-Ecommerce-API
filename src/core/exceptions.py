@@ -86,3 +86,8 @@ class ProductAlreadyExists(BaseApiError):
     """Product with the given SKU already exists"""
 
     pass
+
+class CategoryHasProducts(BaseApiError):
+    """Category has associated products and cannot be deleted"""
+
+    pass

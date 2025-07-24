@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
 from sqlalchemy.orm import selectinload
@@ -23,7 +24,7 @@ class CategoryService:
     @staticmethod
     async def get_category_tree(
         db: AsyncSession,
-        parent_id: UUID | None = None,
+        parent_id: Optional[UUID] = None,
         max_depth: int = 1,
         current_depth: int = 0,
     ) -> list[CategoryReadDetail]:

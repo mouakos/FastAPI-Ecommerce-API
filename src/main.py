@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
-from src.routes.v1 import accounts, auth, users
+from src.routes.v1 import accounts, auth, users, categories
 from src.database.core import init_db
 from src.core.logging import LogLevel, setup_logging
 from src.core.exception_handler import register_all_errors
@@ -33,20 +33,7 @@ app = FastAPI(
         "name": "Stephane Mouako",
         "url": "https://github.com/mouakos",
     },
-    openapi_tags=[
-        {
-            "name": "Auth",
-            "description": "Operations related to user authentication.",
-        },
-        {
-            "name": "Accounts",
-            "description": "Operations related to user accounts.",
-        },
-        {
-            "name": "Users",
-            "description": "Operations related to user management.",
-        },
-    ],
+   
     swagger_ui_parameters={
         "syntaxHighlight.theme": "monokai",
         "layout": "BaseLayout",
@@ -55,7 +42,6 @@ app = FastAPI(
         "onComplete": "Ok",
     },
 )
-
 # Register exception handlers
 register_all_errors(app)
 
@@ -63,3 +49,4 @@ register_all_errors(app)
 app.include_router(auth.router)
 app.include_router(accounts.router)
 app.include_router(users.router)
+app.include_router(categories.router)

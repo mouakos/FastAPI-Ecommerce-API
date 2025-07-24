@@ -6,10 +6,15 @@ import logging
 from src.core.exceptions import (
     AccessTokenRequired,
     BaseApiError,
+    CategoryAlreadyExists,
+    CategoryHasChildren,
+    CategoryNotFound,
     InsufficientPermission,
+    InvalidCategoryHierarchy,
     InvalidCredentials,
     InvalidPassword,
     InvalidToken,
+    ParentCategoryNotFound,
     PasswordMismatch,
     RefreshTokenRequired,
     RevokedToken,
@@ -21,9 +26,7 @@ from src.core.exceptions import (
 def create_exception_handler(
     status_code: int, initial_detail: Any
 ) -> Callable[[Request, Exception], JSONResponse]:
-
     async def exception_handler(request: Request, exc: BaseApiError) -> JSONResponse:
-
         return JSONResponse(content=initial_detail, status_code=status_code)
 
     return exception_handler
@@ -56,7 +59,7 @@ def register_all_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_400_BAD_REQUEST,
             initial_detail={
-                "message": "Invalid Email or Password",
+                "message": "The provided email or password is invalid",
                 "error_code": "invalid_email_or_password",
             },
         ),
@@ -88,7 +91,7 @@ def register_all_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_401_UNAUTHORIZED,
             initial_detail={
-                "message": "Invalid access token",
+                "message": "Access token is required for this action",
                 "resolution": "Please provide a valid access token or get a new one",
                 "error_code": "access_token_required",
             },
@@ -99,7 +102,7 @@ def register_all_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_403_FORBIDDEN,
             initial_detail={
-                "message": "Invalid refresh token",
+                "message": "The provided token is not a refresh token",
                 "resolution": "Please provide a valid refresh token or get a new one",
                 "error_code": "refresh_token_required",
             },
@@ -134,6 +137,61 @@ def register_all_errors(app: FastAPI):
             initial_detail={
                 "message": "Password is invalid",
                 "error_code": "invalid_password",
+            },
+        ),
+    )
+    app.add_exception_handler(
+        CategoryNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            initial_detail={
+                "message": "Category not found",
+                "error_code": "category_not_found",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        CategoryAlreadyExists,
+        create_exception_handler(
+            status_code=status.HTTP_409_CONFLICT,
+            initial_detail={
+                "message": "Category with this name/slug already exists",
+                "error_code": "category_already_exists",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        ParentCategoryNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            initial_detail={
+                "message": "Parent category not found",
+                "resolution": "Please ensure the parent category ID is correct",
+                "error_code": "parent_category_not_found",
+            },
+        ),
+    )
+    app.add_exception_handler(
+        InvalidCategoryHierarchy,
+        create_exception_handler(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            initial_detail={
+                "message": "A category cannot be its own parent or a parent of itself indirectly.",
+                "resolution": "Please check the parent-child relationship of the categories",
+                "error_code": "invalid_category_hierarchy",
+            },
+        ),
+    )
+    app.add_exception_handler(
+        CategoryHasChildren,
+        create_exception_handler(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            initial_detail={
+                "message": "The category has child categories and cannot be deleted.",
+                "resolution": "Please delete or reassign child categories before deleting this category",
+                "error_code": "category_has_children",
             },
         ),
     )

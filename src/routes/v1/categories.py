@@ -1,5 +1,6 @@
+from typing import Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
 from fastapi_pagination import Page
 from src.categories.schemas import (
@@ -19,8 +20,11 @@ role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 
 # --- Public Endpoints ---
 @router.get("/", response_model=Page[CategoryRead], summary="List all Categories")
-async def list_categories(db: DbSession):
-    return await CategoryService.get_category_tree(db)
+async def list_categories(
+    db: DbSession,
+    search: Optional[str] = Query("", description="Search categories by name"),
+) -> Page[CategoryRead]:
+    return await CategoryService.get_category_tree(db, search=search)
 
 
 @router.get(

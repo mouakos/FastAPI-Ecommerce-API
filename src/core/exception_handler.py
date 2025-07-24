@@ -153,14 +153,12 @@ def register_all_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_409_CONFLICT,
             initial_detail={
-                "message": "Category with this name/slug already exists",
+                "message": "Category with this name already exists",
                 "error_code": "category_already_exists",
             },
         ),
     )
 
-    
-    
     @app.exception_handler(status.HTTP_500_INTERNAL_SERVER_ERROR)
     async def internal_server_error(request, exc):
         logging.error(

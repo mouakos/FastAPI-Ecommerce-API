@@ -10,29 +10,28 @@ from src.categories.schemas import (
     CategoryUpdate,
 )
 from src.models.category import Category
-from src.core.exceptions import (
-    CategoryAlreadyExists,
-    CategoryNotFound
-)
+from src.core.exceptions import CategoryAlreadyExists, CategoryNotFound
 
 
 class CategoryService:
     @staticmethod
-    async def get_category_tree(
-        db: AsyncSession,
-    ) -> Page[Category]:
+    async def get_category_tree(db: AsyncSession, search: str = "") -> Page[Category]:
         """
         Recursively fetch categories and their children up to a specified depth.
         Args:
             db (AsyncSession): The database session.
-            parent_id (UUID | None, optional): The ID of the parent category. Defaults to None.
-            max_depth (int, optional): The maximum depth to fetch. Defaults to 1.
-            current_depth (int, optional): The current depth in the recursion. Defaults to 0.
+            search (str): Search term to filter categories by name.
 
         Returns:
-            list[CategoryReadDetail]: A list of category details.
+            list[CategoryRead]: A list of categories.
         """
-        return await sqlmodel_paginate(db, select(Category).order_by(Category.name))
+        stmt = (
+            select(Category)
+            .where(func.lower(Category.name).like(f"%{search.lower()}%"))
+            .order_by(Category.name)
+        )
+
+        return await sqlmodel_paginate(db, stmt)
 
     @staticmethod
     async def get_category(
@@ -57,7 +56,6 @@ class CategoryService:
         if not category:
             raise CategoryNotFound()
         return category
-       
 
     @staticmethod
     async def create_category(
@@ -70,17 +68,16 @@ class CategoryService:
             category_data (CategoryCreate): The category data to create.
 
         Raises:
-            CategoryAlreadyExists: If a category with the same name or slug already exists.
+            CategoryAlreadyExists: If a category with the same name already exists.
 
         Returns:
             CategoryRead: The created category details.
         """
         async with db.begin():
-            # Check for duplicate slug/name
+            # Check for duplicate name
             exists = await db.exec(
                 select(Category).where(
-                    (func.lower(Category.slug) == func.lower(category_data.slug))
-                    | (func.lower(Category.name) == func.lower(category_data.name))
+                    func.lower(Category.name) == func.lower(category_data.name)
                 )
             )
             if exists.first():
@@ -104,7 +101,7 @@ class CategoryService:
 
         Raises:
             CategoryNotFound: If the category is not found.
-            CategoryAlreadyExists: If a category with the same name or slug already exists.
+            CategoryAlreadyExists: If a category with the same name already exists.
 
         Returns:
             CategoryRead: The updated category details.
@@ -116,11 +113,7 @@ class CategoryService:
 
             exists = await db.exec(
                 select(Category).where(
-                    (
-                        (func.lower(Category.name) == func.lower(update_data.name))
-                        | (func.lower(Category.slug) == func.lower(update_data.slug))
-                    )
-                    & (Category.id != category_id)
+                    func.lower(Category.name) == func.lower(update_data.name)
                 )
             )
             if exists.first():

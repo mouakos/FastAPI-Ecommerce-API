@@ -171,13 +171,13 @@ def register_all_errors(app: FastAPI):
             },
         ),
     )
-    
+
     app.add_exception_handler(
         ProductAlreadyExists,
         create_exception_handler(
             status_code=status.HTTP_409_CONFLICT,
             initial_detail={
-                "message": "Product with this SKU already exists",
+                "message": "Product with the same name SKU already exists",
                 "error_code": "product_already_exists",
             },
         ),

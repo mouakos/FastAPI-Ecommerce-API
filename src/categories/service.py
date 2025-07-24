@@ -4,6 +4,7 @@ from fastapi_pagination.ext.sqlmodel import paginate as sqlmodel_paginate
 from fastapi_pagination import Page
 from sqlmodel import select, func
 from uuid import UUID
+from slugify import slugify
 
 from src.categories.schemas import (
     CategoryCreate,
@@ -75,10 +76,17 @@ class CategoryService:
             CategoryRead: The created category details.
         """
         async with db.begin():
-            if await CategoryService._get_category_by_name(db, category_data.name):
+            exists = await db.exec(
+                select(Category).where(
+                    func.lower(Category.name) == func.lower(category_data.name)
+                )
+            )
+            if exists.first():
                 raise CategoryAlreadyExists()
 
-            category = Category(**category_data.model_dump())
+            category = Category(
+                **category_data.model_dump(), slug=slugify(category_data.name)
+            )
             db.add(category)
         await db.refresh(category)
         return CategoryRead(**category.model_dump())
@@ -106,15 +114,21 @@ class CategoryService:
             if not category:
                 raise CategoryNotFound()
 
-            if update_data.name and await CategoryService._get_category_by_name(
-                db, update_data.name
-            ):
+            if update_data.name and update_data.name.lower() != category.name.lower():
+                exists = await db.exec(
+                    select(Category).where(
+                        func.lower(Category.name) == update_data.name.lower(),
+                        Category.id != category_id,
+                    )
+                )
+            if exists.first():
                 raise CategoryAlreadyExists()
 
             # Apply updates
             for field, value in update_data.model_dump(exclude_unset=True).items():
                 setattr(category, field, value)
             category.updated_at = datetime.utcnow()
+            category.slug = slugify(category.name)
 
         await db.refresh(category)
         return CategoryRead(**category.model_dump())
@@ -133,20 +147,3 @@ class CategoryService:
             if not category:
                 raise CategoryNotFound()
             await db.delete(category)
-
-    @staticmethod
-    async def _get_category_by_name(db: AsyncSession, name: str) -> Category | None:
-        """Get a category by its name.
-
-        Args:
-            db (AsyncSession): The database session.
-            name (str): The name of the category.
-
-        Returns:
-            Category | None: The category if found, None otherwise.
-        """
-        return (
-            await db.exec(
-                select(Category).where(func.lower(Category.name) == func.lower(name))
-            )
-        ).first()

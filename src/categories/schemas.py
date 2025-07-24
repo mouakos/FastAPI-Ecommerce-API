@@ -20,5 +20,6 @@ class CategoryUpdate(BaseModel):
 
 class CategoryRead(CategoryBase):
     id: UUID
+    slug: str
     created_at: datetime
     updated_at: datetime

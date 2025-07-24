@@ -20,15 +20,16 @@ class ProductCreate(ProductBase):
 
 class ProductRead(ProductBase):
     id: UUID
+    slug: str
     created_at: datetime
     updated_at: datetime
 
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
+    sku: Optional[str] = Field(None, min_length=1, max_length=50)
     description: Optional[str] = None
     price: Optional[float] = Field(None, ge=0)
     brand: Optional[str] = Field(None, min_length=1, max_length=100)
     stock: Optional[int] = Field(None, ge=0)
-    sku: Optional[str] = Field(None, min_length=1, max_length=50)
     category_id: Optional[UUID] = None

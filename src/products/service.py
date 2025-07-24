@@ -2,6 +2,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
 from uuid import UUID
 from datetime import datetime
+from slugify import slugify
 
 from src.models.category import Category
 from src.models.product import Product
@@ -26,12 +27,20 @@ class ProductService:
             CategoryNotFound: If the category does not exist.
         """
         async with db.begin():
-            if await ProductService._get_product_by_sku(db, data.sku):
+            exists = await db.exec(
+                select(Product).where(
+                    (
+                        (func.lower(Product.name) == data.name.lower())
+                        | (func.lower(Product.sku) == data.sku.lower())
+                    )
+                )
+            )
+            if exists.first():
                 raise ProductAlreadyExists()
             category = await db.get(Category, data.category_id)
             if not category:
                 raise CategoryNotFound()
-            product = Product(**data.model_dump())
+            product = Product(**data.model_dump(), slug=slugify(data.name))
             db.add(product)
 
         await db.refresh(product)
@@ -91,16 +100,28 @@ class ProductService:
         async with db.begin():
             if data.category_id and not await db.get(Category, data.category_id):
                 raise CategoryNotFound()
-            if data.sku:
-                if await ProductService._get_product_by_sku(db, data.sku):
-                    raise ProductAlreadyExists()
+
             product = await db.get(Product, product_id)
             if not product:
                 raise ProductNotFound()
 
+            if data.name and data.name.lower() != product.name.lower():
+                exists = await db.exec(
+                    select(Product).where(
+                        (
+                            (func.lower(Product.name) == data.name.lower())
+                            | (func.lower(Product.sku) == data.sku.lower())
+                        ),
+                        Product.id != product_id,
+                    )
+                )
+                if exists.first():
+                    raise ProductAlreadyExists()
+
             for key, value in data.model_dump(exclude_unset=True).items():
                 setattr(product, key, value)
             product.updated_at = datetime.utcnow()
+            product.slug = slugify(product.name)
 
         await db.refresh(product)
         return ProductRead(**product.model_dump())

@@ -64,12 +64,12 @@ class UserService:
         return UserRead(**user.model_dump())
 
     @staticmethod
-    async def create_user(db: AsyncSession, user_data: UserCreate) -> UserRead:
+    async def create_user(db_session: AsyncSession, user_data: UserCreate) -> UserRead:
         """
         Create a new user.
 
         Args:
-            db (AsyncSession): Database session.
+            db_session (AsyncSession): Database session.
             user_data (UserCreate): User creation data.
 
         Raises:
@@ -78,19 +78,21 @@ class UserService:
         Returns:
             UserRead: Created user.
         """
-        existing_user = (
-            await db.exec(select(User).where(User.email == user_data.email))
-        ).first()
-        if existing_user:
-            logging.warning(f"Signup attempt with existing email: {user_data.email}")
-            raise UserAlreadyExists()
-        user = User(
-            **user_data.model_dump(),
-            password_hash=generate_password_hash(user_data.password),
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
+        async with db_session.begin():
+            existing_user = (
+                await db_session.exec(select(User).where(User.email == user_data.email))
+            ).first()
+            if existing_user:
+                logging.warning(
+                    f"Signup attempt with existing email: {user_data.email}"
+                )
+                raise UserAlreadyExists()
+            user = User(
+                **user_data.model_dump(),
+                password_hash=generate_password_hash(user_data.password),
+            )
+            db_session.add(user)
+        await db_session.refresh(user)
         logging.info(f"User {user.email} created successfully")
         return UserRead(**user.model_dump())
 
@@ -111,16 +113,17 @@ class UserService:
         Returns:
             UserRead: The updated user.
         """
-        user = await db_session.get(User, user_id)
-        if not user:
-            logging.error(f"User with ID {user_id} not found for update")
-            raise UserNotFound(user_id)
+        async with db_session.begin():
+            user = await db_session.get(User, user_id)
+            if not user:
+                logging.error(f"User with ID {user_id} not found for update")
+                raise UserNotFound(user_id)
 
-        for key, value in user_data.items():
-            setattr(user, key, value)
+            for key, value in user_data.items():
+                setattr(user, key, value)
 
-        db_session.add(user)
-        await db_session.commit()
+            db_session.add(user)
+
         await db_session.refresh(user)
         logging.info(f"User with ID {user_id} updated successfully")
         return UserRead(**user.model_dump())
@@ -136,13 +139,13 @@ class UserService:
         Raises:
             UserNotFound: If the user is not found.
         """
-        user = await db_session.get(User, user_id)
-        if not user:
-            logging.error(f"User with ID {user_id} not found for deletion")
-            raise UserNotFound(user_id)
+        async with db_session.begin():
+            user = await db_session.get(User, user_id)
+            if not user:
+                logging.error(f"User with ID {user_id} not found for deletion")
+                raise UserNotFound(user_id)
 
-        await db_session.delete(user)
-        await db_session.commit()
+            await db_session.delete(user)
         logging.info(f"User with ID {user_id} deleted successfully")
 
     @staticmethod
@@ -198,25 +201,28 @@ class UserService:
         Returns:
             UserRead: The updated user with the new password.
         """
-        user = await db_session.get(User, user_id)
-        if not user:
-            logging.error(f"User with ID {user_id} not found for password change")
-            raise UserNotFound(user_id)
+        async with db_session.begin():
+            user = await db_session.get(User, user_id)
+            if not user:
+                logging.error(f"User with ID {user_id} not found for password change")
+                raise UserNotFound(user_id)
 
-        # Verify current password
-        if not verify_password(password_data.current_password, user.password):
-            logging.error(f"Current password for user with ID {user_id} is incorrect")
-            raise InvalidPassword()
+            # Verify current password
+            if not verify_password(password_data.current_password, user.password):
+                logging.error(
+                    f"Current password for user with ID {user_id} is incorrect"
+                )
+                raise InvalidPassword()
 
-        # Verify new passwords match
-        if password_data.new_password != password_data.new_password_confirm:
-            logging.warning(
-                f"Password mismatch during change attempt for user ID: {user_id}"
-            )
-            raise PasswordMismatch()
+            # Verify new passwords match
+            if password_data.new_password != password_data.new_password_confirm:
+                logging.warning(
+                    f"Password mismatch during change attempt for user ID: {user_id}"
+                )
+                raise PasswordMismatch()
 
-        user.password_hash = generate_password_hash(password_data.new_password)
-        await db_session.commit()
+            user.password_hash = generate_password_hash(password_data.new_password)
+
         await db_session.refresh(user)
         logging.info(f"Password for user with ID {user_id} changed successfully")
 
@@ -237,13 +243,14 @@ class UserService:
         Returns:
             UserRead: The updated user with the new role.
         """
-        user = await db_session.get(User, user_id)
-        if not user:
-            logging.error(f"User with ID {user_id} not found for role change")
-            raise UserNotFound(user_id)
+        async with db_session.begin():
+            user = await db_session.get(User, user_id)
+            if not user:
+                logging.error(f"User with ID {user_id} not found for role change")
+                raise UserNotFound(user_id)
 
-        user.role = role_data.role.value
-        await db_session.commit()
+            user.role = role_data.role.value
+
         await db_session.refresh(user)
         logging.info(
             f"Role for user with ID {user_id} changed to {role_data.role.value} successfully"

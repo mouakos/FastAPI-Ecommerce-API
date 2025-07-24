@@ -3,7 +3,12 @@ from sqlmodel import select, func
 from sqlalchemy.orm import selectinload
 from uuid import UUID
 
-from src.categories.schemas import CategoryCreate, CategoryRead, CategoryReadDetail, CategoryUpdate
+from src.categories.schemas import (
+    CategoryCreate,
+    CategoryRead,
+    CategoryReadDetail,
+    CategoryUpdate,
+)
 from src.models.category import Category
 from src.core.exceptions import (
     CategoryAlreadyExists,
@@ -22,6 +27,17 @@ class CategoryService:
         max_depth: int = 1,
         current_depth: int = 0,
     ) -> list[CategoryReadDetail]:
+        """
+        Recursively fetch categories and their children up to a specified depth.
+        Args:
+            db (AsyncSession): The database session.
+            parent_id (UUID | None, optional): The ID of the parent category. Defaults to None.
+            max_depth (int, optional): The maximum depth to fetch. Defaults to 1.
+            current_depth (int, optional): The current depth in the recursion. Defaults to 0.
+
+        Returns:
+            list[CategoryReadDetail]: A list of category details.
+        """
         stmt = select(Category).where(Category.parent_id == parent_id)
         if current_depth < max_depth:
             stmt = stmt.options(selectinload(Category.children))
@@ -34,7 +50,7 @@ class CategoryService:
                 if depth < max_depth
                 else []
             )
-            return CategoryRead(**cat.model_dump(), children=children)
+            return CategoryReadDetail(**cat.model_dump(), children=children)
 
         return [build_tree(cat, current_depth) for cat in categories]
 
@@ -44,6 +60,19 @@ class CategoryService:
         category_id: UUID,
         include_children: bool = False,
     ) -> CategoryRead | CategoryReadDetail:
+        """Get a category by its ID.
+
+        Args:
+            db (AsyncSession): The database session.
+            category_id (UUID): The ID of the category to retrieve.
+            include_children (bool, optional): Whether to include child categories. Defaults to False.
+
+        Raises:
+            CategoryNotFound: If the category is not found.
+
+        Returns:
+            CategoryRead | CategoryReadDetail: The category details, either with or without children.
+        """
         if not include_children:
             stmt = select(Category).where(Category.id == category_id)
             result = await db.exec(stmt)
@@ -73,7 +102,20 @@ class CategoryService:
     @staticmethod
     async def create_category(
         db: AsyncSession, category_data: CategoryCreate
-    ) -> CategoryRead :
+    ) -> CategoryRead:
+        """Create a new category.
+
+        Args:
+            db (AsyncSession): The database session.
+            category_data (CategoryCreate): The category data to create.
+
+        Raises:
+            ParentCategoryNotFound: If the parent category is not found.
+            CategoryAlreadyExists: If a category with the same name or slug already exists.
+
+        Returns:
+            CategoryRead: The created category details.
+        """
         async with db.begin():
             # Validate parent exists
             if category_data.parent_id:
@@ -100,6 +142,21 @@ class CategoryService:
     async def update_category(
         db: AsyncSession, category_id: UUID, update_data: CategoryUpdate
     ) -> CategoryRead:
+        """Update an existing category.
+
+        Args:
+            db (AsyncSession): The database session.
+            category_id (UUID): The ID of the category to update.
+            update_data (CategoryUpdate): The updated category data.
+
+        Raises:
+            CategoryNotFound: If the category is not found.
+            InvalidCategoryHierarchy: If the category hierarchy is invalid.
+            CategoryAlreadyExists: If a category with the same name or slug already exists.
+
+        Returns:
+            CategoryRead: The updated category details.
+        """
         async with db.begin():
             category = await db.get(Category, category_id)
             if not category:
@@ -139,6 +196,14 @@ class CategoryService:
 
     @staticmethod
     async def delete_category(db: AsyncSession, category_id: UUID) -> None:
+        """Delete a category by its ID.
+        Args:
+            db (AsyncSession): The database session.
+            category_id (UUID): The ID of the category to delete.
+        Raises:
+            CategoryNotFound: If the category is not found.
+            CategoryHasChildren: If the category has child categories.
+        """
         async with db.begin():
             category = await db.get(Category, category_id)
             if not category:

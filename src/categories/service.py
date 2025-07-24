@@ -21,7 +21,9 @@ from src.core.exceptions import (
 
 class CategoryService:
     @staticmethod
-    async def get_category_tree(db: AsyncSession, search: str = "") -> Page[Category]:
+    async def get_category_tree(
+        db: AsyncSession, search: str = ""
+    ) -> Page[CategoryRead]:
         """
         Recursively fetch categories and their children up to a specified depth.
         Args:
@@ -37,7 +39,9 @@ class CategoryService:
             .order_by(Category.name)
         )
 
-        return await sqlmodel_paginate(db, stmt)
+        page = await sqlmodel_paginate(db, stmt)
+        page.items = [CategoryRead(**cat.model_dump()) for cat in page.items]
+        return page
 
     @staticmethod
     async def get_category(

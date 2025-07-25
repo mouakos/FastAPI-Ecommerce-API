@@ -27,7 +27,7 @@ class Product(SQLModel, table=True):
 
     # Relationship with category - many-to-one
     category_id: UUID = Field(default=None, foreign_key="categories.id", nullable=False)
-    category: Optional["Category"] = Relationship(back_populates="products")
+    category: "Category" = Relationship(back_populates="products")
 
     # Relationship with tags - many-to-many
     tags: list["Tag"] = Relationship(

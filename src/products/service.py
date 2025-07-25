@@ -1,19 +1,22 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
+from sqlalchemy.orm import selectinload
 from uuid import UUID
 from datetime import datetime
 from slugify import slugify
 
+from src.categories.schemas import CategoryRead
 from src.models.category import Category
 from src.models.product import Product
 from src.models.tag import Tag
-from src.products.schemas import ProductCreate, ProductRead, ProductUpdate
+from src.products.schemas import ProductCreate, ProductRead, ProductReadDetail, ProductUpdate
 from src.core.exceptions import (
     ProductAlreadyExists,
     ProductNotFound,
     CategoryNotFound,
     TagNotFound,
 )
+from src.tags.schemas import TagRead
 
 
 class ProductService:
@@ -70,7 +73,7 @@ class ProductService:
         return ProductRead(**product.model_dump(), tag_ids=tags)
 
     @staticmethod
-    async def get_product_by_id(db: AsyncSession, product_id: UUID) -> ProductRead:
+    async def get_product(db: AsyncSession, product_id: UUID) -> ProductReadDetail:
         """Get a product by its ID.
 
         Args:
@@ -78,15 +81,25 @@ class ProductService:
             product_id (UUID): The ID of the product.
 
         Returns:
-            ProductRead: The requested product.
+            ProductReadDetail: The product details.
 
         Raises:
             ProductNotFound: If the product does not exist.
         """
-        product = await db.get(Product, product_id)
+        stmt = (
+        select(Product)
+        .where(Product.id == product_id)
+        .options(
+            selectinload(Product.category),
+            selectinload(Product.tags)
+        )
+        )
+        product = (await db.exec(stmt)).first()
         if not product:
             raise ProductNotFound()
-        return ProductRead(**product.model_dump())
+        category_read = CategoryRead(**product.category.model_dump()) if product.category else None
+        tags_read = [TagRead(**tag.model_dump()) for tag in product.tags] if product.tags else []
+        return ProductReadDetail(**product.model_dump(), category=category_read, tags=tags_read)
 
     @staticmethod
     async def list_products(db: AsyncSession) -> list[ProductRead]:

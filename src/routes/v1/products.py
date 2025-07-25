@@ -1,7 +1,12 @@
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 from uuid import UUID
-from src.products.schemas import ProductCreate, ProductRead, ProductUpdate
+from src.products.schemas import (
+    ProductCreate,
+    ProductRead,
+    ProductReadDetail,
+    ProductUpdate,
+)
 from src.products.service import ProductService
 from src.core.dependencies import DbSession
 
@@ -20,11 +25,11 @@ async def create_product(product_data: ProductCreate, db: DbSession) -> ProductR
 
 @router.get(
     "/{product_id}",
-    response_model=ProductRead,
+    response_model=ProductReadDetail,
     summary="Get product by ID",
 )
-async def get_product_by_id(product_id: UUID, db: DbSession) -> ProductRead:
-    return await ProductService.get_product_by_id(db, product_id)
+async def get_product(product_id: UUID, db: DbSession) -> ProductReadDetail:
+    return await ProductService.get_product(db, product_id)
 
 
 @router.get(

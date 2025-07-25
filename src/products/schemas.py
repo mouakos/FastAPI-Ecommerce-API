@@ -3,6 +3,9 @@ from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, Field
 
+from src.categories.schemas import CategoryRead
+from src.tags.schemas import TagRead
+
 
 class ProductBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -11,17 +14,25 @@ class ProductBase(BaseModel):
     brand: str = Field(..., min_length=1, max_length=100)
     stock: int = Field(..., ge=0)
     sku: str = Field(..., min_length=1, max_length=50)
+
+
+class ProductCreate(ProductBase):
     category_id: UUID
     tag_ids: Optional[list[UUID]] = Field(default_factory=list)
 
 
-class ProductCreate(ProductBase):
-    pass
-
-
-class ProductRead(ProductBase):
+class ProductRead(ProductCreate):
     id: UUID
     slug: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ProductReadDetail(ProductBase):
+    id: UUID
+    slug: str
+    category: CategoryRead = None
+    tags: list[TagRead] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 

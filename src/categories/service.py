@@ -84,17 +84,14 @@ class CategoryService:
             CategoryRead: The created category details.
         """
         async with db.begin():
+            slug = slugify(category_data.name)
             exists = await db.exec(
-                select(Category).where(
-                    func.lower(Category.name) == func.lower(category_data.name)
-                )
+                select(Category).where(func.lower(Category.slug) == func.lower(slug))
             )
             if exists.first():
                 raise CategoryAlreadyExists()
 
-            category = Category(
-                **category_data.model_dump(), slug=slugify(category_data.name)
-            )
+            category = Category(**category_data.model_dump(), slug=slug)
             db.add(category)
         await db.refresh(category)
         return CategoryRead(**category.model_dump())
@@ -122,21 +119,21 @@ class CategoryService:
             if not category:
                 raise CategoryNotFound()
 
-            if update_data.name and update_data.name.lower() != category.name.lower():
-                exists = await db.exec(
-                    select(Category).where(
-                        func.lower(Category.name) == update_data.name.lower(),
-                        Category.id != category_id,
-                    )
+            if update_data.name:
+                new_slug = slugify(update_data.name)
+                conflict = await db.exec(
+                    select(Category)
+                    .where(func.lower(Category.slug) == func.lower(new_slug))
+                    .where(Category.id != category_id)
                 )
-            if exists.first():
+            if conflict.first():
                 raise CategoryAlreadyExists()
 
             # Apply updates
             for field, value in update_data.model_dump(exclude_unset=True).items():
                 setattr(category, field, value)
             category.updated_at = datetime.utcnow()
-            category.slug = slugify(category.name)
+            category.slug = new_slug
 
         await db.refresh(category)
         return CategoryRead(**category.model_dump())

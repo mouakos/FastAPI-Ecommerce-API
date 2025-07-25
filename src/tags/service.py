@@ -62,21 +62,24 @@ class TagService:
         Raises:
             TagAlreadyExists: If the slug already exists.
         """
-        slug = slugify(tag_data.name)
-        exists = await db.exec(
-            select(Tag).where(func.lower(Tag.slug) == func.lower(slug))
-        )
-        if exists.first():
-            raise TagAlreadyExists()
+        async with db.begin():
+            slug = slugify(tag_data.name)
+            exists = await db.exec(
+                select(Tag).where(func.lower(Tag.slug) == func.lower(slug))
+            )
+            if exists.first():
+                raise TagAlreadyExists()
 
-        tag = Tag(name=tag_data.name, slug=slug)
-        db.add(tag)
-        await db.commit()
+            tag = Tag(name=tag_data.name, slug=slug)
+            db.add(tag)
+
         await db.refresh(tag)
         return TagRead(**tag.model_dump())
 
     @staticmethod
-    async def update_tag(db: AsyncSession, tag_id: UUID, tag_data: TagUpdate) -> TagRead:
+    async def update_tag(
+        db: AsyncSession, tag_id: UUID, tag_data: TagUpdate
+    ) -> TagRead:
         """
         Update an existing tag.
 
@@ -92,25 +95,25 @@ class TagService:
             TagNotFound: If the tag is not found.
             TagAlreadyExists: If the new slug conflicts with another tag.
         """
-        tag = await db.get(Tag, tag_id)
-        if not tag:
-            raise TagNotFound()
+        async with db.begin():
+            tag = await db.get(Tag, tag_id)
+            if not tag:
+                raise TagNotFound()
 
-        if tag_data.name:
-            new_slug = slugify(tag_data.name)
-            conflict = await db.exec(
-                select(Tag)
-                .where(func.lower(Tag.slug) == func.lower(new_slug))
-                .where(Tag.id != tag_id)
-            )
-            if conflict.first():
-                raise TagAlreadyExists()
+            if tag_data.name:
+                new_slug = slugify(tag_data.name)
+                conflict = await db.exec(
+                    select(Tag)
+                    .where(func.lower(Tag.slug) == func.lower(new_slug))
+                    .where(Tag.id != tag_id)
+                )
+                if conflict.first():
+                    raise TagAlreadyExists()
 
-            tag.name = tag_data.name
-            tag.slug = new_slug
-            tag.updated_at = datetime.utcnow()
+                tag.name = tag_data.name
+                tag.slug = new_slug
+                tag.updated_at = datetime.utcnow()
 
-        await db.commit()
         await db.refresh(tag)
         return TagRead(**tag.model_dump())
 
@@ -126,9 +129,9 @@ class TagService:
         Raises:
             TagNotFound: If the tag does not exist.
         """
-        tag = await db.get(Tag, tag_id)
-        if not tag:
-            raise TagNotFound()
+        async with db.begin():
+            tag = await db.get(Tag, tag_id)
+            if not tag:
+                raise TagNotFound()
 
-        await db.delete(tag)
-        await db.commit()
+            await db.delete(tag)

@@ -71,7 +71,7 @@ class CategoryNotFound(BaseApiError):
 
 
 class CategoryAlreadyExists(BaseApiError):
-    """Category with the given name or slug already exists"""
+    """Category with the given name already exists"""
 
     pass
 

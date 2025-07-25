@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
-from src.routes.v1 import accounts, auth, users, categories, products
+from src.routes.v1 import accounts, auth, users, categories, products, tags
 from src.database.core import init_db
 from src.core.logging import LogLevel, setup_logging
 from src.core.exception_handler import register_all_errors
@@ -53,3 +53,4 @@ app.include_router(accounts.router)
 app.include_router(users.router)
 app.include_router(categories.router)
 app.include_router(products.router)
+app.include_router(tags.router)

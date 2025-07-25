@@ -18,7 +18,7 @@ class Category(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
-    # Relationships
+    # Relationship with products - one-to-many
     products: list["Product"] = Relationship(
         back_populates="category", sa_relationship_kwargs={"lazy": "selectin"}
     )

@@ -18,6 +18,8 @@ from src.core.exceptions import (
     ProductNotFound,
     RefreshTokenRequired,
     RevokedToken,
+    TagAlreadyExists,
+    TagNotFound,
     UserAlreadyExists,
     UserNotFound,
 )
@@ -200,6 +202,29 @@ def register_all_errors(app: FastAPI):
                 "message": "Category has associated products and cannot be deleted",
                 "resolution": "Please remove products from this category before deleting",
                 "error_code": "category_has_products",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        TagNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            initial_detail={
+                "message": "Tag not found",
+                "resolution": "Please check the tag ID",
+                "error_code": "tag_not_found",
+            },
+        ),
+    )
+    app.add_exception_handler(
+        TagAlreadyExists,
+        create_exception_handler(
+            status_code=status.HTTP_409_CONFLICT,
+            initial_detail={
+                "message": "Tag with this name already exists",
+                "resolution": "Please choose a different name",
+                "error_code": "tag_exists",
             },
         ),
     )

@@ -3,8 +3,11 @@ from sqlmodel import Field, Relationship, SQLModel
 from datetime import datetime
 from uuid import UUID, uuid4
 
+from src.models.product_tag import ProductTag
+
 if TYPE_CHECKING:
     from src.models.category import Category
+    from src.models.tag import Tag
 
 
 class Product(SQLModel, table=True):
@@ -22,6 +25,9 @@ class Product(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # Relationship with category
+    # Relationship with category - many-to-one
     category_id: UUID = Field(default=None, foreign_key="categories.id", nullable=False)
     category: Optional["Category"] = Relationship(back_populates="products")
+
+    # Relationship with tags - many-to-many
+    tags: list["Tag"] = Relationship(back_populates="products", link_model=ProductTag)

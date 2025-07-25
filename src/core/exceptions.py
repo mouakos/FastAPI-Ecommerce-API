@@ -87,7 +87,20 @@ class ProductAlreadyExists(BaseApiError):
 
     pass
 
+
 class CategoryHasProducts(BaseApiError):
     """Category has associated products and cannot be deleted"""
+
+    pass
+
+
+class TagNotFound(BaseApiError):
+    """Tag with the given ID does not exist"""
+
+    pass
+
+
+class TagAlreadyExists(BaseApiError):
+    """Tag with the given name already exists"""
 
     pass

@@ -10,13 +10,13 @@ router = APIRouter(prefix="/tags", tags=["Tags"])
 
 
 @router.get("/", response_model=list[TagRead], summary="List all tags")
-async def list_tags(db: DbSession) -> list[TagRead]:
-    return await TagService.list_tags(db)
+async def list_tags(db_session: DbSession) -> list[TagRead]:
+    return await TagService.list_tags(db_session)
 
 
 @router.get("/{tag_id}", response_model=TagRead, summary="Get tag by ID")
-async def get_tag(tag_id: UUID, db: DbSession) -> TagRead:
-    return await TagService.get_tag(db, tag_id)
+async def get_tag(tag_id: UUID, db_session: DbSession) -> TagRead:
+    return await TagService.get_tag(db_session, tag_id)
 
 
 @router.post(
@@ -25,18 +25,18 @@ async def get_tag(tag_id: UUID, db: DbSession) -> TagRead:
     status_code=status.HTTP_201_CREATED,
     summary="Create a new tag",
 )
-async def create_tag(data: TagCreate, db: DbSession) -> TagRead:
-    return await TagService.create_tag(db, data)
+async def create_tag(data: TagCreate, db_session: DbSession) -> TagRead:
+    return await TagService.create_tag(db_session, data)
 
 
 @router.patch("/{tag_id}", response_model=TagRead, summary="Update an existing tag")
-async def update_tag(tag_id: UUID, data: TagUpdate, db: DbSession) -> TagRead:
-    return await TagService.update_tag(db, tag_id, data)
+async def update_tag(tag_id: UUID, data: TagUpdate, db_session: DbSession) -> TagRead:
+    return await TagService.update_tag(db_session, tag_id, data)
 
 
 @router.delete("/{tag_id}", summary="Delete a tag")
-async def delete_tag(tag_id: UUID, db: DbSession) -> JSONResponse:
-    await TagService.delete_tag(db, tag_id)
+async def delete_tag(tag_id: UUID, db_session: DbSession) -> JSONResponse:
+    await TagService.delete_tag(db_session, tag_id)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"message": "Tag deleted successfully"},

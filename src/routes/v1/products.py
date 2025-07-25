@@ -19,8 +19,8 @@ router = APIRouter(prefix="/products", tags=["Products"])
     status_code=status.HTTP_201_CREATED,
     summary="Create a new product",
 )
-async def create_product(product_data: ProductCreate, db: DbSession) -> ProductRead:
-    return await ProductService.create_product(db, product_data)
+async def create_product(product_data: ProductCreate, db_session: DbSession) -> ProductRead:
+    return await ProductService.create_product(db_session, product_data)
 
 
 @router.get(
@@ -28,8 +28,8 @@ async def create_product(product_data: ProductCreate, db: DbSession) -> ProductR
     response_model=ProductReadDetail,
     summary="Get product by ID",
 )
-async def get_product(product_id: UUID, db: DbSession) -> ProductReadDetail:
-    return await ProductService.get_product(db, product_id)
+async def get_product(product_id: UUID, db_session: DbSession) -> ProductReadDetail:
+    return await ProductService.get_product(db_session, product_id)
 
 
 @router.get(
@@ -37,8 +37,8 @@ async def get_product(product_id: UUID, db: DbSession) -> ProductReadDetail:
     response_model=list[ProductRead],
     summary="List all products",
 )
-async def list_products(db: DbSession) -> list[ProductRead]:
-    return await ProductService.list_products(db)
+async def list_products(db_session: DbSession) -> list[ProductRead]:
+    return await ProductService.list_products(db_session)
 
 
 @router.patch(
@@ -47,17 +47,17 @@ async def list_products(db: DbSession) -> list[ProductRead]:
     summary="Update an existing product",
 )
 async def update_product(
-    product_id: UUID, update_data: ProductUpdate, db: DbSession
+    product_id: UUID, update_data: ProductUpdate, db_session: DbSession
 ) -> ProductRead:
-    return await ProductService.update_product(db, product_id, update_data)
+    return await ProductService.update_product(db_session, product_id, update_data)
 
 
 @router.delete(
     "/{product_id}",
     summary="Delete an existing product",
 )
-async def delete_product(product_id: UUID, db: DbSession) -> JSONResponse:
-    await ProductService.delete_product(db, product_id)
+async def delete_product(product_id: UUID, db_session: DbSession) -> JSONResponse:
+    await ProductService.delete_product(db_session, product_id)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"message": "Product deleted successfully"},

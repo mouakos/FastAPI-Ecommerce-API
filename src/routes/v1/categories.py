@@ -21,20 +21,20 @@ role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 # --- Public Endpoints ---
 @router.get("/", response_model=Page[CategoryRead], summary="List all Categories")
 async def list_categories(
-    db: DbSession,
+    db_session: DbSession,
     search: Optional[str] = Query("", description="Search categories by name"),
 ) -> Page[CategoryRead]:
-    return await CategoryService.get_category_tree(db, search=search)
+    return await CategoryService.get_category_tree(db_session, search=search)
 
 
 @router.get(
     "/{category_id}", response_model=CategoryRead, summary="Get Category Details"
 )
 async def get_category(
-    db: DbSession,
+    db_session: DbSession,
     category_id: UUID,
 ):
-    return await CategoryService.get_category(db, category_id)
+    return await CategoryService.get_category(db_session, category_id)
 
 
 # --- Admin Endpoints ---
@@ -45,10 +45,10 @@ async def get_category(
     summary="Create New Category",
 )
 async def create_category(
-    db: DbSession,
+    db_session: DbSession,
     category_data: CategoryCreate,
 ):
-    return await CategoryService.create_category(db, category_data)
+    return await CategoryService.create_category(db_session, category_data)
 
 
 @router.put(
@@ -57,11 +57,11 @@ async def create_category(
     summary="Update Category",
 )
 async def update_category(
-    db: DbSession,
+    db_session: DbSession,
     category_id: UUID,
     update_data: CategoryUpdate,
 ):
-    return await CategoryService.update_category(db, category_id, update_data)
+    return await CategoryService.update_category(db_session, category_id, update_data)
 
 
 @router.delete(
@@ -69,8 +69,8 @@ async def update_category(
     # dependencies=[role_checker_admin],
     summary="Delete Category",
 )
-async def delete_category(db: DbSession, category_id: UUID) -> JSONResponse:
-    await CategoryService.delete_category(db, category_id)
+async def delete_category(db_session: DbSession, category_id: UUID) -> JSONResponse:
+    await CategoryService.delete_category(db_session, category_id)
     return JSONResponse(
         status_code=status.HTTP_204_NO_CONTENT,
         content={"message": "Category deleted successfully"},

@@ -13,27 +13,27 @@ class TagService:
     """Service class for managing tags in the system."""
 
     @staticmethod
-    async def list_tags(db: AsyncSession) -> list[TagRead]:
+    async def list_tags(db_session: AsyncSession) -> list[TagRead]:
         """
         Retrieve all tags from the database.
 
         Args:
-            db (AsyncSession): The database session.
+            db_session (AsyncSession): The database session.
 
         Returns:
             list[TagRead]: A list of tags.
         """
-        result = await db.exec(select(Tag))
+        result = await db_session.exec(select(Tag))
         tags = result.all()
         return [TagRead(**tag.model_dump()) for tag in tags]
 
     @staticmethod
-    async def get_tag(db: AsyncSession, tag_id: UUID) -> TagRead:
+    async def get_tag(db_session: AsyncSession, tag_id: UUID) -> TagRead:
         """
         Retrieve a tag by its ID.
 
         Args:
-            db (AsyncSession): The database session.
+            db_session (AsyncSession): The database session.
             tag_id (UUID): The tag's unique identifier.
 
         Returns:
@@ -42,18 +42,18 @@ class TagService:
         Raises:
             TagNotFound: If the tag does not exist.
         """
-        tag = await db.get(Tag, tag_id)
+        tag = await db_session.get(Tag, tag_id)
         if not tag:
             raise TagNotFound()
         return TagRead(**tag.model_dump())
 
     @staticmethod
-    async def create_tag(db: AsyncSession, tag_data: TagCreate) -> TagRead:
+    async def create_tag(db_session: AsyncSession, tag_data: TagCreate) -> TagRead:
         """
         Create a new tag with a unique slug.
 
         Args:
-            db (AsyncSession): The database session.
+            db_session (AsyncSession): The database session.
             tag_data (TagCreate): The tag creation data.
 
         Returns:
@@ -62,29 +62,28 @@ class TagService:
         Raises:
             TagAlreadyExists: If the slug already exists.
         """
-        async with db.begin():
-            slug = slugify(tag_data.name)
-            exists = await db.exec(
-                select(Tag).where(func.lower(Tag.slug) == func.lower(slug))
-            )
-            if exists.first():
-                raise TagAlreadyExists()
+        slug = slugify(tag_data.name)
+        exists = await db_session.exec(
+            select(Tag).where(func.lower(Tag.slug) == func.lower(slug))
+        )
+        if exists.first():
+            raise TagAlreadyExists()
 
-            tag = Tag(name=tag_data.name, slug=slug)
-            db.add(tag)
-
-        await db.refresh(tag)
+        tag = Tag(name=tag_data.name, slug=slug)
+        db_session.add(tag)
+        await db_session.commit()
+        await db_session.refresh(tag)
         return TagRead(**tag.model_dump())
 
     @staticmethod
     async def update_tag(
-        db: AsyncSession, tag_id: UUID, tag_data: TagUpdate
+        db_session: AsyncSession, tag_id: UUID, tag_data: TagUpdate
     ) -> TagRead:
         """
         Update an existing tag.
 
         Args:
-            db (AsyncSession): The database session.
+            db_session (AsyncSession): The database session.
             tag_id (UUID): The tag's ID to update.
             tag_data (TagUpdate): New values for the tag.
 
@@ -95,43 +94,44 @@ class TagService:
             TagNotFound: If the tag is not found.
             TagAlreadyExists: If the new slug conflicts with another tag.
         """
-        async with db.begin():
-            tag = await db.get(Tag, tag_id)
-            if not tag:
-                raise TagNotFound()
 
-            if tag_data.name and tag_data.name.lower() != tag.name.lower():
-                new_slug = slugify(tag_data.name)
-                conflict = await db.exec(
-                    select(Tag)
-                    .where(func.lower(Tag.slug) == func.lower(new_slug))
-                    .where(Tag.id != tag_id)
-                )
-                if conflict.first():
-                    raise TagAlreadyExists()
+        tag = await db_session.get(Tag, tag_id)
+        if not tag:
+            raise TagNotFound()
 
-                tag.name = tag_data.name
-                tag.slug = new_slug
-                tag.updated_at = datetime.utcnow()
+        if tag_data.name and tag_data.name.lower() != tag.name.lower():
+            new_slug = slugify(tag_data.name)
+            conflict = await db_session.exec(
+                select(Tag)
+                .where(func.lower(Tag.slug) == func.lower(new_slug))
+                .where(Tag.id != tag_id)
+            )
+            if conflict.first():
+                raise TagAlreadyExists()
 
-        await db.refresh(tag)
+            tag.name = tag_data.name
+            tag.slug = new_slug
+            tag.updated_at = datetime.utcnow()
+        await db_session.commit()
+        await db_session.refresh(tag)
         return TagRead(**tag.model_dump())
 
     @staticmethod
-    async def delete_tag(db: AsyncSession, tag_id: UUID) -> None:
+    async def delete_tag(db_session: AsyncSession, tag_id: UUID) -> None:
         """
         Delete a tag by its ID.
 
         Args:
-            db (AsyncSession): The database session.
+            db_session (AsyncSession): The database session.
             tag_id (UUID): The ID of the tag to delete.
 
         Raises:
             TagNotFound: If the tag does not exist.
         """
-        async with db.begin():
-            tag = await db.get(Tag, tag_id)
-            if not tag:
-                raise TagNotFound()
 
-            await db.delete(tag)
+        tag = await db_session.get(Tag, tag_id)
+        if not tag:
+            raise TagNotFound()
+
+        await db_session.delete(tag)
+        await db_session.commit()

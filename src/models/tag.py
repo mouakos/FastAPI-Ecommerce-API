@@ -21,5 +21,7 @@ class Tag(SQLModel, table=True):
 
     # Relationship with products
     products: list["Product"] = Relationship(
-        back_populates="tags", link_model=ProductTag
+        back_populates="tags",
+        link_model=ProductTag,
+        sa_relationship_kwargs={"lazy": "selectin"},
     )

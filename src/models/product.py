@@ -30,4 +30,8 @@ class Product(SQLModel, table=True):
     category: Optional["Category"] = Relationship(back_populates="products")
 
     # Relationship with tags - many-to-many
-    tags: list["Tag"] = Relationship(back_populates="products", link_model=ProductTag)
+    tags: list["Tag"] = Relationship(
+        back_populates="products",
+        link_model=ProductTag,
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )

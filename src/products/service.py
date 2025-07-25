@@ -6,8 +6,14 @@ from slugify import slugify
 
 from src.models.category import Category
 from src.models.product import Product
+from src.models.tag import Tag
 from src.products.schemas import ProductCreate, ProductRead, ProductUpdate
-from src.core.exceptions import ProductAlreadyExists, ProductNotFound, CategoryNotFound
+from src.core.exceptions import (
+    ProductAlreadyExists,
+    ProductNotFound,
+    CategoryNotFound,
+    TagNotFound,
+)
 
 
 class ProductService:
@@ -27,6 +33,7 @@ class ProductService:
             CategoryNotFound: If the category does not exist.
         """
         async with db.begin():
+            # Check for existing name/sku
             exists = await db.exec(
                 select(Product).where(
                     (
@@ -37,14 +44,30 @@ class ProductService:
             )
             if exists.first():
                 raise ProductAlreadyExists()
+
+            # Check category
             category = await db.get(Category, data.category_id)
             if not category:
                 raise CategoryNotFound()
-            product = Product(**data.model_dump(), slug=slugify(data.name))
+
+            # Check tags
+            tags = []
+            if data.tag_ids:
+                tags = (
+                    await db.exec(select(Tag).where(Tag.id.in_(data.tag_ids)))
+                ).all()
+                if len(tags) != len(set(data.tag_ids)):
+                    raise TagNotFound()
+
+            product = Product(
+                **data.model_dump(exclude={"tag_ids"}),
+                slug=slugify(data.name),
+                tags=tags,
+            )
             db.add(product)
 
         await db.refresh(product)
-        return ProductRead(**product.model_dump())
+        return ProductRead(**product.model_dump(), tag_ids=tags)
 
     @staticmethod
     async def get_product_by_id(db: AsyncSession, product_id: UUID) -> ProductRead:
@@ -106,25 +129,44 @@ class ProductService:
                 raise ProductNotFound()
 
             if data.name and data.name.lower() != product.name.lower():
-                exists = await db.exec(
+                name_exists = await db.exec(
                     select(Product).where(
-                        (
-                            (func.lower(Product.name) == data.name.lower())
-                            | (func.lower(Product.sku) == data.sku.lower())
-                        ),
+                        func.lower(Product.name) == data.name.lower(),
                         Product.id != product_id,
                     )
                 )
-                if exists.first():
+                if name_exists.first():
+                    raise ProductAlreadyExists()
+                product.slug = slugify(product.name)
+
+            if data.sku and data.sku.lower() != product.sku.lower():
+                sku_exists = await db.exec(
+                    select(Product).where(
+                        func.lower(Product.sku) == data.sku.lower(),
+                        Product.id != product_id,
+                    )
+                )
+                if sku_exists.first():
                     raise ProductAlreadyExists()
 
-            for key, value in data.model_dump(exclude_unset=True).items():
+            for key, value in data.model_dump(
+                exclude_unset=True, exclude={"tag_ids"}
+            ).items():
                 setattr(product, key, value)
+
+            if data.tag_ids:
+                tags = (
+                    await db.exec(select(Tag).where(Tag.id.in_(data.tag_ids)))
+                ).all()
+                if len(tags) != len(set(data.tag_ids)):
+                    raise TagNotFound()
+                product.tags = tags
+
+            # TODO - Check if fields are actually changed
             product.updated_at = datetime.utcnow()
-            product.slug = slugify(product.name)
 
         await db.refresh(product)
-        return ProductRead(**product.model_dump())
+        return ProductRead(**product.model_dump(), tag_ids=data.tag_ids or [])
 
     @staticmethod
     async def delete_product(db: AsyncSession, product_id: UUID) -> None:
@@ -142,20 +184,3 @@ class ProductService:
             if not product:
                 raise ProductNotFound()
             await db.delete(product)
-
-    @staticmethod
-    async def _get_product_by_sku(db: AsyncSession, sku: str) -> ProductRead | None:
-        """Get a product by its SKU.
-
-        Args:
-            db (AsyncSession): The database session.
-            sku (str): The SKU of the product.
-
-        Returns:
-            ProductRead | None: The product if found, None otherwise.
-        """
-        return (
-            await db.exec(
-                select(Product).where(func.lower(Product.sku) == func.lower(sku))
-            )
-        ).first()

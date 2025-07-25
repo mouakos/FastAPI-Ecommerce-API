@@ -122,6 +122,7 @@ class UserService:
             for key, value in user_data.items():
                 setattr(user, key, value)
 
+            # TODO - Check if fields are actually changed
             user.updated_at = datetime.utcnow()
 
         await db_session.refresh(user)

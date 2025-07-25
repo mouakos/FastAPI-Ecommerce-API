@@ -12,6 +12,7 @@ class ProductBase(BaseModel):
     stock: int = Field(..., ge=0)
     sku: str = Field(..., min_length=1, max_length=50)
     category_id: UUID
+    tag_ids: Optional[list[UUID]] = Field(default_factory=list)
 
 
 class ProductCreate(ProductBase):
@@ -33,3 +34,4 @@ class ProductUpdate(BaseModel):
     brand: Optional[str] = Field(None, min_length=1, max_length=100)
     stock: Optional[int] = Field(None, ge=0)
     category_id: Optional[UUID] = None
+    tag_ids: Optional[list[UUID]] = None

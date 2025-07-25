@@ -100,7 +100,7 @@ class TagService:
             if not tag:
                 raise TagNotFound()
 
-            if tag_data.name:
+            if tag_data.name and tag_data.name.lower() != tag.name.lower():
                 new_slug = slugify(tag_data.name)
                 conflict = await db.exec(
                     select(Tag)

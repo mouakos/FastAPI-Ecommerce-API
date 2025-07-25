@@ -119,21 +119,23 @@ class CategoryService:
             if not category:
                 raise CategoryNotFound()
 
-            if update_data.name:
+            if update_data.name and update_data.name.lower() != category.name.lower():
                 new_slug = slugify(update_data.name)
                 conflict = await db.exec(
                     select(Category)
                     .where(func.lower(Category.slug) == func.lower(new_slug))
                     .where(Category.id != category_id)
                 )
-            if conflict.first():
-                raise CategoryAlreadyExists()
+                if conflict.first():
+                    raise CategoryAlreadyExists()
+                category.slug = new_slug
 
             # Apply updates
             for field, value in update_data.model_dump(exclude_unset=True).items():
                 setattr(category, field, value)
+
+            # TODO - Check if fields are actually changed
             category.updated_at = datetime.utcnow()
-            category.slug = new_slug
 
         await db.refresh(category)
         return CategoryRead(**category.model_dump())

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
+from uuid import UUID
 
 from src.core.dependencies import DbSession
 from src.tags.schemas import TagCreate, TagRead, TagUpdate
@@ -14,7 +15,7 @@ async def list_tags(db: DbSession) -> list[TagRead]:
 
 
 @router.get("/{tag_id}", response_model=TagRead, summary="Get tag by ID")
-async def get_tag(tag_id: str, db: DbSession) -> TagRead:
+async def get_tag(tag_id: UUID, db: DbSession) -> TagRead:
     return await TagService.get_tag(db, tag_id)
 
 
@@ -29,14 +30,14 @@ async def create_tag(data: TagCreate, db: DbSession) -> TagRead:
 
 
 @router.patch("/{tag_id}", response_model=TagRead, summary="Update an existing tag")
-async def update_tag(tag_id: str, data: TagUpdate, db: DbSession) -> TagRead:
+async def update_tag(tag_id: UUID, data: TagUpdate, db: DbSession) -> TagRead:
     return await TagService.update_tag(db, tag_id, data)
 
 
 @router.delete("/{tag_id}", summary="Delete a tag")
-async def delete_tag(tag_id: str, db: DbSession) -> JSONResponse:
+async def delete_tag(tag_id: UUID, db: DbSession) -> JSONResponse:
     await TagService.delete_tag(db, tag_id)
     return JSONResponse(
-        status_code=status.HTTP_204_NO_CONTENT,
+        status_code=status.HTTP_200_OK,
         content={"message": "Tag deleted successfully"},
     )

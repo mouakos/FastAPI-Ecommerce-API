@@ -43,6 +43,7 @@ async def get_category(
     response_model=CategoryRead,
     status_code=status.HTTP_201_CREATED,
     summary="Create New Category",
+    dependencies=[role_checker_admin],
 )
 async def create_category(
     db_session: DbSession,
@@ -51,10 +52,11 @@ async def create_category(
     return await CategoryService.create_category(db_session, category_data)
 
 
-@router.put(
+@router.patch(
     "/{category_id}",
     response_model=CategoryRead,
     summary="Update Category",
+    dependencies=[role_checker_admin],
 )
 async def update_category(
     db_session: DbSession,
@@ -66,7 +68,7 @@ async def update_category(
 
 @router.delete(
     "/{category_id}",
-    # dependencies=[role_checker_admin],
+    dependencies=[role_checker_admin],
     summary="Delete Category",
 )
 async def delete_category(db_session: DbSession, category_id: UUID) -> JSONResponse:

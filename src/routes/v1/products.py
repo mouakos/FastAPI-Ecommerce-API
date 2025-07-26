@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from uuid import UUID
 from src.products.schemas import (
@@ -8,16 +8,19 @@ from src.products.schemas import (
     ProductUpdate,
 )
 from src.products.service import ProductService
-from src.core.dependencies import DbSession
+from src.core.dependencies import DbSession, RoleChecker
+from src.users.schemas import UserRole
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
+role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 
 @router.post(
     "/",
     response_model=ProductRead,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new product",
+    dependencies=[role_checker_admin],
 )
 async def create_product(product_data: ProductCreate, db_session: DbSession) -> ProductRead:
     return await ProductService.create_product(db_session, product_data)
@@ -45,6 +48,7 @@ async def list_products(db_session: DbSession) -> list[ProductRead]:
     "/{product_id}",
     response_model=ProductRead,
     summary="Update an existing product",
+    dependencies=[role_checker_admin],
 )
 async def update_product(
     product_id: UUID, update_data: ProductUpdate, db_session: DbSession
@@ -55,6 +59,7 @@ async def update_product(
 @router.delete(
     "/{product_id}",
     summary="Delete an existing product",
+    dependencies=[role_checker_admin],
 )
 async def delete_product(product_id: UUID, db_session: DbSession) -> JSONResponse:
     await ProductService.delete_product(db_session, product_id)

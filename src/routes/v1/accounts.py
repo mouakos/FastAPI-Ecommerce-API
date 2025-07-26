@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
-from src.users.schemas import PasswordUpdate, UserRead, AccountUpdate
+from src.users.schemas import PasswordUpdate, UserRead, UserUpdate
 from src.users.service import UserService
 from src.core.dependencies import CurrentUser
 from src.core.dependencies import DbSession
@@ -20,11 +20,9 @@ async def get_account(current_user: CurrentUser) -> UserRead:
     "/", response_model=UserRead, summary="Update current logged-in User Information"
 )
 async def update_account(
-    db_session: DbSession, current_user: CurrentUser, user_data: AccountUpdate
+    db_session: DbSession, current_user: CurrentUser, user_update: UserUpdate
 ) -> UserRead:
-    return await UserService.update_user(
-        db_session, current_user.id, user_data.model_dump(exclude_unset=True)
-    )
+    return await UserService.update_user(db_session, current_user.id, user_update)
 
 
 @router.put(

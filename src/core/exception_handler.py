@@ -17,6 +17,7 @@ from src.core.exceptions import (
     ProductAlreadyExists,
     ProductNotFound,
     RefreshTokenRequired,
+    ReviewNotFound,
     RevokedToken,
     TagAlreadyExists,
     TagNotFound,
@@ -225,6 +226,18 @@ def register_all_errors(app: FastAPI):
                 "message": "Tag with this name already exists",
                 "resolution": "Please choose a different name",
                 "error_code": "tag_exists",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        ReviewNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            initial_detail={
+                "message": "Review not found",
+                "resolution": "Please check the review ID",
+                "error_code": "review_not_found",
             },
         ),
     )

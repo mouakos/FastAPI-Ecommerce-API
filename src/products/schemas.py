@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from src.categories.schemas import CategoryRead
+from src.reviews.schemas import ReviewRead
 from src.tags.schemas import TagRead
 
 
@@ -31,10 +32,11 @@ class ProductRead(ProductCreate):
 class ProductReadDetail(ProductBase):
     id: UUID
     slug: str
-    category: CategoryRead = None
-    tags: list[TagRead] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
+    category: CategoryRead = None
+    tags: list[TagRead] = Field(default_factory=list)
+    reviews: list[ReviewRead] = Field(default_factory=list)
 
 
 class ProductUpdate(BaseModel):

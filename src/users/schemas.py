@@ -23,26 +23,26 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=6, max_length=50, exclude=True)
+    password: str = Field(..., min_length=6, max_length=50, exclude=True, repr=False)
 
 
 class UserRead(UserBase):
     id: UUID
-    date_of_birth: Optional[datetime] = None
+    date_of_birth: Optional[date] = None
     phone_number: Optional[str] = None
     role: UserRole
     created_at: datetime
     updated_at: datetime
 
 
-class AccountUpdate(BaseModel):
+class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(None, min_length=2, max_length=50)
     date_of_birth: Optional[date] = Field(None)
     phone_number: Optional[str] = Field(None, max_length=15)
 
 
-class UserUpdate(AccountUpdate):
-    pass
+class AdminUserUpdate(UserUpdate):
+    role: Optional[UserRole] = None
 
 
 class UserLogin(BaseModel):
@@ -61,7 +61,3 @@ class PasswordUpdate(BaseModel):
     current_password: str
     new_password: str = Field(..., min_length=6, max_length=50)
     new_password_confirm: str = Field(..., min_length=6, max_length=50)
-
-
-class RoleUpdate(BaseModel):
-    role: Optional[UserRole] = None

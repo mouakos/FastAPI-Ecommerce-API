@@ -1,8 +1,11 @@
 from enum import Enum
-from typing import Optional
-from sqlmodel import Field, SQLModel
+from typing import Optional, TYPE_CHECKING
+from sqlmodel import Field, Relationship, SQLModel
 from datetime import datetime, date
 from uuid import UUID, uuid4
+
+if TYPE_CHECKING:
+    from src.models.review import Review
 
 
 class Gender(str, Enum):
@@ -30,3 +33,8 @@ class User(SQLModel, table=True):
 
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+
+    # Relationship with reviews - one-to-many
+    reviews: list["Review"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"lazy": "selectin"}
+    )

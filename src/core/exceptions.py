@@ -104,3 +104,9 @@ class TagAlreadyExists(BaseApiError):
     """Tag with the given name already exists"""
 
     pass
+
+
+class ReviewNotFound(BaseApiError):
+    """Review with the given ID does not exist"""
+
+    pass

@@ -20,12 +20,15 @@ from src.core.exceptions import (
     CategoryNotFound,
     TagNotFound,
 )
+from src.reviews.schemas import ReviewRead
 from src.tags.schemas import TagRead
 
 
 class ProductService:
     @staticmethod
-    async def create_product(db_session: AsyncSession, data: ProductCreate) -> ProductRead:
+    async def create_product(
+        db_session: AsyncSession, data: ProductCreate
+    ) -> ProductRead:
         """Create a new product.
 
         Args:
@@ -77,7 +80,9 @@ class ProductService:
         return ProductRead(**product.model_dump(), tag_ids=tags)
 
     @staticmethod
-    async def get_product(db_session: AsyncSession, product_id: UUID) -> ProductReadDetail:
+    async def get_product(
+        db_session: AsyncSession, product_id: UUID
+    ) -> ProductReadDetail:
         """Get a product by its ID.
 
         Args:
@@ -101,7 +106,17 @@ class ProductService:
             if product.tags
             else []
         )
-        return ProductReadDetail(**product.model_dump(), category=category_read, tags=tags_read)
+        reviews_read = (
+            [ReviewRead(**review.model_dump()) for review in product.reviews]
+            if product.reviews
+            else []
+        )
+        return ProductReadDetail(
+            **product.model_dump(),
+            category=category_read,
+            tags=tags_read,
+            reviews=reviews_read,
+        )
 
     @staticmethod
     async def list_products(db_session: AsyncSession) -> list[ProductRead]:
@@ -135,7 +150,7 @@ class ProductService:
             ProductAlreadyExists: If a product with the same SKU already exists.
             CategoryNotFound: If the category does not exist.
         """
-        
+
         if data.category_id and not await db_session.get(Category, data.category_id):
             raise CategoryNotFound()
 

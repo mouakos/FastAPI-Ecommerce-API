@@ -5,11 +5,11 @@ import logging
 from uuid import UUID
 from src.users.schemas import (
     PasswordUpdate,
-    RoleUpdate,
     TokenResponse,
     UserCreate,
     UserLogin,
     UserRead,
+    UserUpdate,
 )
 from src.core.security import (
     create_token,
@@ -97,7 +97,7 @@ class UserService:
 
     @staticmethod
     async def update_user(
-        db_session: AsyncSession, user_id: UUID, user_data: dict
+        db_session: AsyncSession, user_id: UUID, data: UserUpdate
     ) -> UserRead:
         """Update a user's information.
 
@@ -118,7 +118,7 @@ class UserService:
             logging.error(f"User with ID {user_id} not found for update")
             raise UserNotFound(user_id)
 
-        for key, value in user_data.items():
+        for key, value in data.model_dump(exclude_unset=True).items():
             setattr(user, key, value)
 
         # TODO - Check if fields are actually changed
@@ -225,38 +225,6 @@ class UserService:
         await db_session.refresh(user)
         logging.info(f"Password for user with ID {user_id} changed successfully")
 
-    @staticmethod
-    async def change_user_role(
-        db_session: AsyncSession, user_id: UUID, role_data: RoleUpdate
-    ) -> UserRead:
-        """Change a user's role.
-
-        Args:
-            db_session (AsyncSession): Database session for querying.
-            user_id (UUID): User ID to change the role for.
-            role_data (RoleChange): New role data to assign to the user.
-
-        Raises:
-            UserNotFound: If the user is not found.
-
-        Returns:
-            UserRead: The updated user with the new role.
-        """
-
-        user = await db_session.get(User, user_id)
-        if not user:
-            logging.error(f"User with ID {user_id} not found for role change")
-            raise UserNotFound(user_id)
-
-        user.role = role_data.role.value
-        user.updated_at = datetime.utcnow()
-
-        await db_session.refresh(user)
-        logging.info(
-            f"Role for user with ID {user_id} changed to {role_data.role.value} successfully"
-        )
-        await db_session.commit()
-        return UserRead(**user.model_dump())
 
     @staticmethod
     async def refresh_token(token_data: dict) -> TokenResponse:

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from src.models.category import Category
     from src.models.tag import Tag
     from src.models.review import Review
-    from src.models.product_tag import ProductTag
+    from src.models.cart_item import CartItem
 
 
 class Product(SQLModel, table=True):
@@ -43,5 +43,10 @@ class Product(SQLModel, table=True):
 
     # Relationship with reviews - one-to-many
     reviews: list["Review"] = Relationship(
+        back_populates="product", sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    # Realationship with cart items - one-to-many
+    cart_items: list["CartItem"] = Relationship(
         back_populates="product", sa_relationship_kwargs={"lazy": "selectin"}
     )

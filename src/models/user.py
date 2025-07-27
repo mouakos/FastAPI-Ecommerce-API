@@ -4,6 +4,8 @@ from sqlmodel import Field, Relationship, SQLModel
 from datetime import datetime, date
 from uuid import UUID, uuid4
 
+from src.models.cart import Cart
+
 if TYPE_CHECKING:
     from src.models.review import Review
 
@@ -38,3 +40,6 @@ class User(SQLModel, table=True):
     reviews: list["Review"] = Relationship(
         back_populates="user", sa_relationship_kwargs={"lazy": "selectin"}
     )
+
+    # Relationship with cart - one-to-one
+    cart: "Cart" = Relationship(back_populates="user")

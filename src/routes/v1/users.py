@@ -1,5 +1,6 @@
+from typing import Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
 
 from src.core.dependencies import DbSession, RoleChecker
@@ -9,6 +10,7 @@ from src.users.schemas import (
     UserRole,
 )
 from src.users.service import UserService
+from src.utils.paginate import PaginatedResponse
 
 router = APIRouter(prefix="/api/v1/users", tags=["Users"])
 
@@ -17,13 +19,21 @@ role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 
 @router.get(
     "/",
-    response_model=list[UserRead],
+    response_model=PaginatedResponse[UserRead],
     status_code=status.HTTP_200_OK,
     summary="Get All Users",
     dependencies=[role_checker_admin],
 )
-async def get_all_users(db_session: DbSession) -> list[UserRead]:
-    return await UserService.get_all_users(db_session)
+async def get_all_users(
+    db_session: DbSession,
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(10, ge=1, description="Number of users per page"),
+    role: Optional[UserRole] = Query(None, description="Filter by user role"),
+    search: Optional[str] = Query("", description="Search based email"),
+) -> PaginatedResponse[UserRead]:
+    return await UserService.get_all_users(
+        db_session, page=page, page_size=page_size, search=search, role=role
+    )
 
 
 @router.get(

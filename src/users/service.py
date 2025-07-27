@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
-from sqlmodel import select
+from math import ceil
+from typing import Optional
+from sqlmodel import select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 import logging
 from uuid import UUID
@@ -24,23 +26,59 @@ from src.core.exceptions import (
     UserNotFound,
     InvalidCredentials,
 )
-from src.models.user import User
+from src.models.user import User, UserRole
 from src.core.config import settings
+from src.utils.paginate import PaginatedResponse
 
 
 class UserService:
     @staticmethod
-    async def get_all_users(db_session: AsyncSession) -> list[UserRead]:
-        """Retrieve all users.
+    async def get_all_users(
+        db_session: AsyncSession,
+        page: int,
+        page_size: int,
+        role: Optional[UserRole],
+        search: Optional[str],
+    ) -> PaginatedResponse[UserRead]:
+        """Retrieve all users with pagination and optional filters.
 
         Args:
             db_session (AsyncSession): Database session for querying.
+            page (int): Page number for pagination.
+            page_size (int): Number of users per page.
+            role (Optional[UserRole]): Filter by user role.
+            search (Optional[str]): Search term to filter users by email.
 
         Returns:
-            list[UserRead]: A list of all users.
+            PaginatedResponse[UserRead]: A paginated response containing user data.
         """
-        users = await db_session.exec(select(User).order_by(User.full_name))
-        return [UserRead(**user.model_dump()) for user in users.all()]
+        # Get total count (without limit/offset)
+        count_stmt = select(func.count()).select_from(User).where(
+            (User.role == role) if role else True,
+            (User.email.ilike(f"%{search}%")) if search else True,
+        )
+        total = (await db_session.exec(count_stmt)).one()
+
+        # Get paginated users
+        result = await db_session.exec(
+            select(User)
+            .where(
+                (User.role == role) if role else True,
+                (User.email.ilike(f"%{search}%")) if search else True,
+            )
+            .order_by(User.created_at.desc())
+            .limit(page_size)
+            .offset((page - 1) * page_size)
+        )
+        users = result.all()
+
+        return PaginatedResponse[UserRead](
+            total=total,
+            page=page,
+            size=page_size,
+            pages=ceil(total / page_size) if total else 1,
+            data=[UserRead(**user.model_dump()) for user in users],
+        )
 
     @staticmethod
     async def get_user(db_session: AsyncSession, user_id: UUID) -> UserRead:
@@ -224,7 +262,6 @@ class UserService:
         await db_session.commit()
         await db_session.refresh(user)
         logging.info(f"Password for user with ID {user_id} changed successfully")
-
 
     @staticmethod
     async def refresh_token(token_data: dict) -> TokenResponse:

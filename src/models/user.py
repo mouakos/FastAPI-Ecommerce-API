@@ -32,6 +32,7 @@ class User(SQLModel, table=True):
     date_of_birth: Optional[date] = Field(default=None, nullable=True)
     phone_number: Optional[str] = Field(default=None, nullable=True)
     role: UserRole = Field(default=UserRole.customer, nullable=False)
+    is_active: bool = Field(default=True, nullable=False)
 
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)

@@ -1,7 +1,7 @@
 from datetime import datetime
+from math import ceil
+from typing import Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
-from fastapi_pagination.ext.sqlmodel import paginate as sqlmodel_paginate
-from fastapi_pagination import Page
 from sqlmodel import select, func
 from uuid import UUID
 from slugify import slugify
@@ -17,31 +17,56 @@ from src.core.exceptions import (
     CategoryHasProducts,
     CategoryNotFound,
 )
+from src.utils.paginate import PaginatedResponse
 
 
 class CategoryService:
     @staticmethod
     async def get_category_tree(
-        db_session: AsyncSession, search: str = ""
-    ) -> Page[CategoryRead]:
+        db_session: AsyncSession,
+        page: int,
+        page_size: int,
+        search: Optional[str],
+    ) -> PaginatedResponse[CategoryRead]:
         """
-        Recursively fetch categories and their children up to a specified depth.
+        Retrieve a paginated list of categories with optional search functionality.
         Args:
             db_session (AsyncSession): The database session.
-            search (str): Search term to filter categories by name.
-
+            page (int): The page number for pagination.
+            page_size (int): The number of categories per page.
+            search (Optional[str]): A search term to filter categories by name.
         Returns:
-            list[CategoryRead]: A list of categories.
+            PaginatedResponse[CategoryRead]: A paginated response containing category data.
         """
-        stmt = (
-            select(Category)
-            .where(func.lower(Category.name).like(f"%{search.lower()}%"))
-            .order_by(Category.name)
+        # Get total count (without limit/offset)
+        count_stmt = (
+            select(func.count())
+            .select_from(Category)
+            .where(
+                (Category.name.ilike(f"%{search}%")) if search else True,
+            )
         )
+        total = (await db_session.exec(count_stmt)).one()
 
-        page = await sqlmodel_paginate(db_session, stmt)
-        page.items = [CategoryRead(**cat.model_dump()) for cat in page.items]
-        return page
+        # Get paginated categories
+        result = await db_session.exec(
+            select(Category)
+            .where(
+                (Category.name.ilike(f"%{search}%")) if search else True,
+            )
+            .order_by(Category.created_at.desc())
+            .limit(page_size)
+            .offset((page - 1) * page_size)
+        )
+        categories = result.all()
+
+        return PaginatedResponse[CategoryRead](
+            total=total,
+            page=page,
+            size=page_size,
+            pages=ceil(total / page_size) if total else 1,
+            data=[CategoryRead(**category.model_dump()) for category in categories],
+        )
 
     @staticmethod
     async def get_category(
@@ -83,7 +108,7 @@ class CategoryService:
         Returns:
             CategoryRead: The created category details.
         """
-      
+
         slug = slugify(category_data.name)
         exists = await db_session.exec(
             select(Category).where(func.lower(Category.slug) == func.lower(slug))

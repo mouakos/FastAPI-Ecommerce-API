@@ -14,7 +14,6 @@ from src.routes.v1 import (
 from src.database.core import init_db
 from src.core.logging import LogLevel, setup_logging
 from src.core.exception_handler import register_all_errors
-from fastapi_pagination import add_pagination
 
 setup_logging(LogLevel.info)
 
@@ -51,7 +50,6 @@ app = FastAPI(
         "onComplete": "Ok",
     },
 )
-add_pagination(app)
 
 # Register exception handlers
 register_all_errors(app)

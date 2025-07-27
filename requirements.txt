@@ -1,3 +1,4 @@
+Faker==37.4.2
 fastapi==0.116.1
 fastapi_pagination==0.13.3
 passlib==1.7.4

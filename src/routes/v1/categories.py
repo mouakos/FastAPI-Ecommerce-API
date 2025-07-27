@@ -2,7 +2,6 @@ from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
-from fastapi_pagination import Page
 from src.categories.schemas import (
     CategoryCreate,
     CategoryRead,
@@ -11,6 +10,7 @@ from src.categories.schemas import (
 from src.core.dependencies import DbSession, RoleChecker
 from src.categories.service import CategoryService
 from src.users.schemas import UserRole
+from src.utils.paginate import PaginatedResponse
 
 
 router = APIRouter(prefix="/api/v1/categories", tags=["Categories"])
@@ -19,12 +19,18 @@ role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 
 
 # --- Public Endpoints ---
-@router.get("/", response_model=Page[CategoryRead], summary="List all Categories")
+@router.get(
+    "/", response_model=PaginatedResponse[CategoryRead], summary="List all Categories"
+)
 async def list_categories(
     db_session: DbSession,
+    page: int = Query(1, ge=1, description="Page number for pagination"),
+    page_size: int = Query(10, ge=1, description="Number of categories per page"),
     search: Optional[str] = Query("", description="Search categories by name"),
-) -> Page[CategoryRead]:
-    return await CategoryService.get_category_tree(db_session, search=search)
+) -> PaginatedResponse[CategoryRead]:
+    return await CategoryService.get_category_tree(
+        db_session, page=page, page_size=page_size, search=search
+    )
 
 
 @router.get(

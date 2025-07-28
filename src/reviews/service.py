@@ -1,17 +1,22 @@
+from datetime import datetime
+from math import ceil
+from typing import Optional
 from sqlmodel import select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
 
 from src.models.review import Review
 from src.models.product import Product
-from src.models.user import User
-from src.reviews.schemas import ReviewCreate, ReviewRead
+from src.models.user import User, UserRole
+from src.reviews.schemas import ReviewCreate, ReviewRead, ReviewUpdate
 from src.core.exceptions import (
     InsufficientPermission,
     ProductNotFound,
+    ReviewAlreadyExists,
     ReviewNotFound,
     UserNotFound,
 )
+from src.utils.paginate import PaginatedResponse
 
 
 class ReviewService:
@@ -41,6 +46,15 @@ class ReviewService:
         product = await db.get(Product, product_id)
         if not product:
             raise ProductNotFound()
+
+        existing_review = await db.exec(
+            select(Review).where(
+                Review.product_id == product_id, Review.user_id == user_id
+            )
+        )
+
+        if existing_review.first():
+            raise ReviewAlreadyExists()
 
         review = Review(
             rating=data.rating,
@@ -79,22 +93,111 @@ class ReviewService:
         return ReviewRead(**review.model_dump())
 
     @staticmethod
-    async def list_reviews_for_product(
-        db: AsyncSession, product_id: UUID
-    ) -> list[ReviewRead]:
+    async def list_product_reviews(
+        db_session: AsyncSession,
+        product_id: UUID,
+        page: int,
+        size: int,
+        min_rating: Optional[int] = None,
+        max_rating: Optional[int] = None,
+    ) -> PaginatedResponse[ReviewRead]:
         """
-        List all reviews for a specific product.
+        List reviews for a specific product with pagination and optional rating filter.
 
         Args:
             db (AsyncSession): The database session.
             product_id (UUID): Product ID.
+            page (int): Page number for pagination.
+            size (int): Number of reviews per page.
+            min_rating (Optional[int]): Minimum rating to filter reviews.
+            max_rating (Optional[int]): Maximum rating to filter reviews.
 
         Returns:
-            list[ReviewRead]: A list of reviews.
+            PaginatedResponse[ReviewRead]: A paginated response containing review data.
         """
-        result = await db.exec(select(Review).where(Review.product_id == product_id))
+        # Get total count (without limit/offset)
+        count_stmt = (
+            select(func.count())
+            .select_from(Review)
+            .where(
+                Review.product_id == product_id,
+                func.between(
+                    Review.rating,
+                    min_rating if min_rating else 1,
+                    max_rating if max_rating else 5,
+                ),
+            )
+        )
+        total = (await db_session.exec(count_stmt)).one()
 
-        return [ReviewRead(**r.model_dump()) for r in result.all()]
+        # Get paginated reviews
+        result = await db_session.exec(
+            select(Review)
+            .where(
+                Review.product_id == product_id,
+                func.between(
+                    Review.rating,
+                    min_rating if min_rating else 1,
+                    max_rating if max_rating else 5,
+                ),
+            )
+            .order_by(Review.created_at.desc())
+            .limit(size)
+            .offset((page - 1) * size)
+        )
+        reviews = result.all()
+
+        return PaginatedResponse[ReviewRead](
+            total=total,
+            page=page,
+            size=size,
+            pages=ceil(total / size) if total else 1,
+            items=[ReviewRead(**review.model_dump()) for review in reviews],
+        )
+
+    @staticmethod
+    async def update_review(
+        db: AsyncSession, review_id: UUID, user_id: UUID, data: ReviewUpdate
+    ) -> ReviewRead:
+        """
+        Update an existing review.
+
+        Args:
+            db (AsyncSession): The database session.
+            review_id (UUID): Review ID.
+            user_id (UUID): ID of the user updating the review.
+            data (ReviewUpdate): Updated review data.
+
+        Raises:
+            ReviewNotFound: If the review does not exist.
+            InsufficientPermission: If the user does not own the review.
+
+        Returns:
+            ReviewRead: The updated review.
+        """
+        user = await db.get(User, user_id)
+        if not user:
+            raise UserNotFound()
+
+        review = await db.get(Review, review_id)
+        if not review:
+            raise ReviewNotFound()
+
+        if review.user_id != user_id:
+            raise InsufficientPermission()
+
+        review.rating = data.rating if data.rating is not None else review.rating
+        review.comment = data.comment if data.comment is not None else review.comment
+        review.updated_at = datetime.utcnow()
+
+        db.add(review)
+        await db.commit()
+        await db.refresh(review)
+
+        # Update product rating after updating a review
+        await ReviewService._update_product_rating(db, review.product_id)
+
+        return ReviewRead(**review.model_dump())
 
     @staticmethod
     async def delete_review(db: AsyncSession, review_id: UUID, user_id: UUID) -> None:
@@ -116,7 +219,7 @@ class ReviewService:
         if not review:
             raise ReviewNotFound()
 
-        if review.user_id != user_id:
+        if review.user_id != user_id and user.role != UserRole.admin:
             raise InsufficientPermission()
 
         await db.delete(review)

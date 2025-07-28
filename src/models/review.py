@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from src.models.product import Product
     from src.models.user import User
 
+
 class Review(SQLModel, table=True):
     __tablename__ = "reviews"
 
@@ -14,6 +15,7 @@ class Review(SQLModel, table=True):
     rating: int = Field(ge=1, le=5, nullable=False)
     comment: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
     # Relationship with product - many-to-one
     product_id: UUID = Field(foreign_key="products.id", nullable=False)

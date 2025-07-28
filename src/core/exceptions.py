@@ -110,3 +110,8 @@ class ReviewNotFound(BaseApiError):
     """Review with the given ID does not exist"""
 
     pass
+
+class ReviewAlreadyExists(BaseApiError):
+    """Review for this product by this user already exists"""
+
+    pass

@@ -12,7 +12,7 @@ class Cart(SQLModel, table=True):
     __tablename__ = "carts"
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    total_amount: float = Field(nullable=False)
+    total_amount: float = Field(default=0.0, nullable=False)
 
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)

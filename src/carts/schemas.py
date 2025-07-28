@@ -4,6 +4,7 @@ from uuid import UUID
 
 
 class CartItemBase(BaseModel):
+    product_id: UUID = Field(..., description="Unique identifier for the product")
     quantity: int = Field(..., ge=1, description="Quantity must be at least 1")
 
 

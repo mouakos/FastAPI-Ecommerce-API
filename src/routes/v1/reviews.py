@@ -85,7 +85,7 @@ async def update_review(
 
 
 @router.patch(
-    "admin/{review_id}",
+    "/admin/{review_id}",
     response_model=ReviewRead,
     summary="Change review visibility",
     dependencies=[admin_role_checker],

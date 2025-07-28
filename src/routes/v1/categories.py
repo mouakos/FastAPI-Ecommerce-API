@@ -24,9 +24,11 @@ role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 )
 async def list_categories(
     db_session: DbSession,
-    page: int = Query(1, ge=1, description="Page number for pagination"),
-    page_size: int = Query(10, ge=1, description="Number of categories per page"),
-    search: Optional[str] = Query("", description="Search categories by name"),
+    page: int = Query(default=1, ge=1, description="Page number for pagination"),
+    page_size: int = Query(
+        default=10, ge=1, le=100, description="Number of categories per page"
+    ),
+    search: Optional[str] = Query(default="", description="Search categories by name"),
 ) -> PaginatedResponse[CategoryRead]:
     return await CategoryService.get_category_tree(
         db_session, page=page, page_size=page_size, search=search

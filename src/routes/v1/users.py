@@ -26,10 +26,12 @@ role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 )
 async def get_all_users(
     db_session: DbSession,
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(10, ge=1, description="Number of users per page"),
-    role: Optional[UserRole] = Query(None, description="Filter by user role"),
-    search: Optional[str] = Query("", description="Search based email"),
+    page: int = Query(default=1, ge=1, description="Page number"),
+    page_size: int = Query(
+        default=10, ge=1, le=100, description="Number of users per page"
+    ),
+    role: Optional[UserRole] = Query(default=None, description="Filter by user role"),
+    search: Optional[str] = Query(default="", description="Search based email"),
 ) -> PaginatedResponse[UserRead]:
     return await UserService.get_all_users(
         db_session, page=page, page_size=page_size, search=search, role=role

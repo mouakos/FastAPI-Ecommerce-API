@@ -1,6 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, status
-from fastapi.params import Query
+from fastapi import APIRouter, Depends, status, Query
 from fastapi.responses import JSONResponse
 from uuid import UUID
 
@@ -18,9 +17,11 @@ role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 @router.get("/", response_model=PaginatedResponse[TagRead], summary="List all tags")
 async def list_tags(
     db_session: DbSession,
-    page: int = Query(1, ge=1, description="Page number for pagination"),
-    page_size: int = Query(10, ge=1, description="Number of tags per page"),
-    search: Optional[str] = Query("", description="Search tags by name"),
+    page: int = Query(default=1, ge=1, description="Page number for pagination"),
+    page_size: int = Query(
+        default=10, ge=1, le=100, description="Number of tags per page"
+    ),
+    search: Optional[str] = Query(default="", description="Search tags by name"),
 ) -> PaginatedResponse[TagRead]:
     return await TagService.list_tags(db_session, page, page_size, search)
 

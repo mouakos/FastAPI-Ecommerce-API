@@ -253,7 +253,9 @@ class UserService:
             raise UserNotFound(user_id)
 
         # Verify current password
-        if not verify_password(password_data.current_password, user.password):
+        if not verify_password(
+            generate_password_hash(password_data.current_password), user.password_hash
+        ):
             logging.error(f"Current password for user with ID {user_id} is incorrect")
             raise InvalidPassword()
 

@@ -44,11 +44,11 @@ class UserRead(UserBase):
         default=True, description="Indicates if the user account is active"
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        ...,
         description="Timestamp when the user was created",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        ...,
         description="Timestamp when the user was last updated",
     )
 

@@ -53,9 +53,13 @@ class UserService:
             PaginatedResponse[UserRead]: A paginated response containing user data.
         """
         # Get total count (without limit/offset)
-        count_stmt = select(func.count()).select_from(User).where(
-            (User.role == role) if role else True,
-            (User.email.ilike(f"%{search}%")) if search else True,
+        count_stmt = (
+            select(func.count())
+            .select_from(User)
+            .where(
+                (User.role == role) if role else True,
+                (User.email.ilike(f"%{search}%")) if search else True,
+            )
         )
         total = (await db_session.exec(count_stmt)).one()
 
@@ -77,7 +81,7 @@ class UserService:
             page=page,
             size=page_size,
             pages=ceil(total / page_size) if total else 1,
-            data=[UserRead(**user.model_dump()) for user in users],
+            items=[UserRead(**user.model_dump()) for user in users],
         )
 
     @staticmethod

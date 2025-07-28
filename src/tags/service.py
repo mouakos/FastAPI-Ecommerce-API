@@ -59,7 +59,7 @@ class TagService:
             page=page,
             size=page_size,
             pages=ceil(total / page_size) if total else 1,
-            data=[TagRead(**tag.model_dump()) for tag in tags],
+            items=[TagRead(**tag.model_dump()) for tag in tags],
         )
 
     @staticmethod

@@ -10,4 +10,4 @@ class PaginatedResponse(BaseModel, Generic[T]):
     page: int
     size: int
     pages: int
-    data: List[T]
+    items: List[T]

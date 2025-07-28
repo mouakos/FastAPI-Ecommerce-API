@@ -65,7 +65,7 @@ class CategoryService:
             page=page,
             size=page_size,
             pages=ceil(total / page_size) if total else 1,
-            data=[CategoryRead(**category.model_dump()) for category in categories],
+            items=[CategoryRead(**category.model_dump()) for category in categories],
         )
 
     @staticmethod

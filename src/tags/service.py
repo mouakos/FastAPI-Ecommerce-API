@@ -18,7 +18,11 @@ class TagService:
 
     @staticmethod
     async def list_tags(
-        db_session: AsyncSession, page: int, page_size: int, search: Optional[str]
+        db_session: AsyncSession,
+        page: int,
+        page_size: int,
+        search: Optional[str],
+        is_active: Optional[bool],
     ) -> PaginatedResponse[TagRead]:
         """
         Retrieve a paginated list of tags with optional search functionality.
@@ -38,6 +42,7 @@ class TagService:
             .select_from(Tag)
             .where(
                 (Tag.name.ilike(f"%{search}%")) if search else True,
+                (Tag.is_active == is_active) if is_active is not None else True,
             )
         )
         total = (await db_session.exec(count_stmt)).one()
@@ -47,6 +52,7 @@ class TagService:
             select(Tag)
             .where(
                 (Tag.name.ilike(f"%{search}%")) if search else True,
+                (Tag.is_active == is_active) if is_active is not None else True,
             )
             .order_by(Tag.created_at.desc())
             .limit(page_size)
@@ -146,7 +152,11 @@ class TagService:
 
             tag.name = tag_data.name
             tag.slug = new_slug
-            tag.updated_at = datetime.utcnow()
+
+        if tag_data.is_active is not None:
+            tag.is_active = tag_data.is_active
+
+        tag.updated_at = datetime.utcnow()
         await db_session.commit()
         await db_session.refresh(tag)
         return TagRead(**tag.model_dump())

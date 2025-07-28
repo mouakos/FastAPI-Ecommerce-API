@@ -26,6 +26,28 @@ async def list_tags(
     return await TagService.list_tags(db_session, page, page_size, search)
 
 
+@router.get(
+    "/admin",
+    response_model=PaginatedResponse[TagRead],
+    summary="List all tags",
+    dependencies=[role_checker_admin],
+)
+async def list_all_tags(
+    db_session: DbSession,
+    page: int = Query(default=1, ge=1, description="Page number for pagination"),
+    page_size: int = Query(
+        default=10, ge=1, le=100, description="Number of tags per page"
+    ),
+    search: Optional[str] = Query(default="", description="Search tags by name"),
+    is_active: Optional[bool] = Query(
+        default=None, description="Filter tags by active status"
+    ),
+) -> PaginatedResponse[TagRead]:
+    return await TagService.list_tags(
+        db_session, page=page, page_size=page_size, search=search, is_active=is_active
+    )
+
+
 @router.get("/{tag_id}", response_model=TagRead, summary="Get tag by ID")
 async def get_tag(tag_id: UUID, db_session: DbSession) -> TagRead:
     return await TagService.get_tag(db_session, tag_id)

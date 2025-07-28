@@ -22,11 +22,12 @@ from src.utils.paginate import PaginatedResponse
 
 class CategoryService:
     @staticmethod
-    async def get_category_tree(
+    async def list_categories(
         db_session: AsyncSession,
         page: int,
         page_size: int,
-        search: Optional[str],
+        is_active: Optional[bool] = None,
+        search: Optional[str] = None,
     ) -> PaginatedResponse[CategoryRead]:
         """
         Retrieve a paginated list of categories with optional search functionality.
@@ -34,6 +35,7 @@ class CategoryService:
             db_session (AsyncSession): The database session.
             page (int): The page number for pagination.
             page_size (int): The number of categories per page.
+            is_active (Optional[bool]): Filter categories by active status.
             search (Optional[str]): A search term to filter categories by name.
         Returns:
             PaginatedResponse[CategoryRead]: A paginated response containing category data.
@@ -44,6 +46,7 @@ class CategoryService:
             .select_from(Category)
             .where(
                 (Category.name.ilike(f"%{search}%")) if search else True,
+                (Category.is_active == is_active) if is_active is not None else True,
             )
         )
         total = (await db_session.exec(count_stmt)).one()
@@ -53,6 +56,7 @@ class CategoryService:
             select(Category)
             .where(
                 (Category.name.ilike(f"%{search}%")) if search else True,
+                (Category.is_active == is_active) if is_active is not None else True,
             )
             .order_by(Category.created_at.desc())
             .limit(page_size)

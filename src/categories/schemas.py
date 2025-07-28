@@ -5,8 +5,10 @@ from typing import Optional
 
 
 class CategoryBase(BaseModel):
-    name: str = Field(..., max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
+    name: str = Field(..., max_length=100, description="Name of the category")
+    description: Optional[str] = Field(
+        None, max_length=500, description="Description of the category"
+    )
 
 
 class CategoryCreate(CategoryBase):
@@ -14,12 +16,19 @@ class CategoryCreate(CategoryBase):
 
 
 class CategoryUpdate(BaseModel):
-    name: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = None
+    name: Optional[str] = Field(
+        None, max_length=100, description="Name of the category"
+    )
+    description: Optional[str] = Field(
+        None, max_length=500, description="Description of the category"
+    )
 
 
 class CategoryRead(CategoryBase):
-    id: UUID
-    slug: str
-    created_at: datetime
-    updated_at: datetime
+    id: UUID = Field(..., description="Unique identifier of the category")
+    slug: str = Field(..., description="Slug of the category for URL usage")
+    is_active: bool = Field(..., description="Indicates if the category is active")
+    created_at: datetime = Field(..., description="Creation timestamp of the category")
+    updated_at: datetime = Field(
+        ..., description="Last update timestamp of the category"
+    )

@@ -14,6 +14,7 @@ class Category(SQLModel, table=True):
     name: str = Field(index=True, nullable=False, unique=True)
     slug: str = Field(index=True, nullable=False, unique=True)
     description: Optional[str] = Field(default=None, nullable=True)
+    is_active: bool = Field(default=True, nullable=False)
 
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)

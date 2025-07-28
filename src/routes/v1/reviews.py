@@ -23,7 +23,7 @@ admin_role_checker = Depends(RoleChecker([UserRole.admin]))
 @router.get(
     "/product/{product_id}",
     response_model=PaginatedResponse[ReviewRead],
-    summary="List reviews for a product",
+    summary="List product reviews",
 )
 async def list_product_reviews(
     product_id: UUID,
@@ -52,6 +52,48 @@ async def list_product_reviews(
         size=page_size,
         min_rating=min_rating,
         max_rating=max_rating,
+        is_published=True,
+    )
+
+
+@router.get(
+    "/admin/product/{product_id}",
+    response_model=PaginatedResponse[ReviewRead],
+    summary="List all product reviews",
+    dependencies=[admin_role_checker],
+)
+async def list_all_product_reviews(
+    product_id: UUID,
+    db: DbSession,
+    page: int = Query(default=1, ge=1, description="Page number for pagination"),
+    page_size: int = Query(
+        default=10, ge=1, le=100, description="Number of reviews per page"
+    ),
+    min_rating: Optional[int] = Query(
+        default=None,
+        ge=1,
+        le=5,
+        description="Filter reviews by minimum rating (1 to 5)",
+    ),
+    max_rating: Optional[int] = Query(
+        default=None,
+        ge=1,
+        le=5,
+        description="Filter reviews by maximum rating (1 to 5)",
+    ),
+    is_published: Optional[bool] = Query(
+        default=None,
+        description="Filter reviews by publication status",
+    ),
+) -> PaginatedResponse[ReviewRead]:
+    return await ReviewService.list_product_reviews(
+        db,
+        product_id,
+        page=page,
+        size=page_size,
+        min_rating=min_rating,
+        max_rating=max_rating,
+        is_published=is_published,
     )
 
 

@@ -105,6 +105,7 @@ class ReviewService:
         size: int,
         min_rating: Optional[int] = None,
         max_rating: Optional[int] = None,
+        is_published: Optional[bool] = None,
     ) -> PaginatedResponse[ReviewRead]:
         """
         List reviews for a specific product with pagination and optional rating filter.
@@ -131,6 +132,9 @@ class ReviewService:
                     min_rating if min_rating else 1,
                     max_rating if max_rating else 5,
                 ),
+                (Review.is_published == is_published)
+                if is_published is not None
+                else True,
             )
         )
         total = (await db_session.exec(count_stmt)).one()
@@ -145,6 +149,9 @@ class ReviewService:
                     min_rating if min_rating else 1,
                     max_rating if max_rating else 5,
                 ),
+                (Review.is_published == is_published)
+                if is_published is not None
+                else True,
             )
             .order_by(Review.created_at.desc())
             .limit(size)

@@ -8,7 +8,12 @@ from uuid import UUID
 from src.models.review import Review
 from src.models.product import Product
 from src.models.user import User, UserRole
-from src.reviews.schemas import ReviewCreate, ReviewRead, ReviewUpdate
+from src.reviews.schemas import (
+    AdminReviewUpdate,
+    ReviewCreate,
+    ReviewRead,
+    ReviewUpdate,
+)
 from src.core.exceptions import (
     InsufficientPermission,
     ProductNotFound,
@@ -196,6 +201,37 @@ class ReviewService:
 
         # Update product rating after updating a review
         await ReviewService._update_product_rating(db, review.product_id)
+
+        return ReviewRead(**review.model_dump())
+
+    @staticmethod
+    async def change_review_visibility(
+        db: AsyncSession, review_id: UUID, data: AdminReviewUpdate
+    ) -> ReviewRead:
+        """
+        Change the visibility of a review.
+
+        Args:
+            db (AsyncSession): The database session.
+            review_id (UUID): Review ID.
+            data (AdminReviewUpdate): Updated visibility data.
+
+        Raises:
+            ReviewNotFound: If the review does not exist.
+
+        Returns:
+            ReviewRead: The updated review with new visibility status.
+        """
+        review = await db.get(Review, review_id)
+        if not review:
+            raise ReviewNotFound()
+
+        review.is_published = data.is_published
+        review.updated_at = datetime.utcnow()
+
+        db.add(review)
+        await db.commit()
+        await db.refresh(review)
 
         return ReviewRead(**review.model_dump())
 

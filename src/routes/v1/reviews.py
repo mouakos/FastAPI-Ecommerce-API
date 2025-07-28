@@ -1,16 +1,23 @@
 from uuid import UUID
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from typing import Optional
 
 from fastapi.responses import JSONResponse
 
-from src.reviews.schemas import ReviewCreate, ReviewRead, ReviewUpdate
+from src.reviews.schemas import (
+    AdminReviewUpdate,
+    ReviewCreate,
+    ReviewRead,
+    ReviewUpdate,
+)
 from src.reviews.service import ReviewService
-from src.core.dependencies import DbSession, CurrentUser
+from src.core.dependencies import DbSession, CurrentUser, RoleChecker
+from src.users.schemas import UserRole
 from src.utils.paginate import PaginatedResponse
 
 
 router = APIRouter(prefix="/api/v1/reviews", tags=["Reviews"])
+admin_role_checker = Depends(RoleChecker([UserRole.admin]))
 
 
 @router.get(
@@ -75,6 +82,23 @@ async def update_review(
     current_user: CurrentUser,
 ) -> ReviewRead:
     return await ReviewService.update_review(db, review_id, current_user.id, data)
+
+
+@router.patch(
+    "admin/{review_id}",
+    response_model=ReviewRead,
+    summary="Change review visibility",
+    dependencies=[admin_role_checker],
+)
+async def change_review_visibility(
+    review_id: UUID,
+    data: AdminReviewUpdate,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> ReviewRead:
+    return await ReviewService.change_review_visibility(
+        db, review_id, current_user.id, data
+    )
 
 
 @router.get(

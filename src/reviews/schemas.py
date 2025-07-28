@@ -19,6 +19,9 @@ class ReviewRead(BaseModel):
     )
     user_id: UUID = Field(..., description="ID of the user who wrote the review")
     product_id: UUID = Field(..., description="ID of the product being reviewed")
+    is_published: bool = Field(
+        ..., description="Indicates if the review is published or not"
+    )
     created_at: datetime = Field(
         ..., description="Timestamp when the review was created"
     )
@@ -33,4 +36,10 @@ class ReviewUpdate(BaseModel):
     )
     comment: Optional[str] = Field(
         default=None, max_length=500, description="Optional comment for the review"
+    )
+
+
+class AdminReviewUpdate(BaseModel):
+    is_published: bool = Field(
+        ..., description="Indicates if the review should be published or not"
     )

@@ -14,6 +14,7 @@ class Review(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     rating: int = Field(ge=1, le=5, nullable=False)
     comment: Optional[str] = Field(default=None)
+    is_published: bool = Field(default=True, nullable=False)
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 

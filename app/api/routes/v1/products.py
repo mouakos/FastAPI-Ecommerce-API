@@ -1,6 +1,5 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
-from fastapi.responses import JSONResponse
 from uuid import UUID
 from app.products.schemas import (
     ProductCreate,
@@ -9,7 +8,7 @@ from app.products.schemas import (
     ProductUpdate,
 )
 from app.products.service import ProductService
-from app.core.dependencies import DbSession, RoleChecker
+from app.api.dependencies import DbSession, RoleChecker
 from app.users.schemas import UserRole
 from app.utils.paginate import PaginatedResponse
 
@@ -95,10 +94,7 @@ async def update_product(
     "/{product_id}",
     summary="Delete an existing product",
     dependencies=[role_checker_admin],
+    status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_product(product_id: UUID, db_session: DbSession) -> JSONResponse:
+async def delete_product(product_id: UUID, db_session: DbSession) -> None:
     await ProductService.delete_product(db_session, product_id)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"message": "Product deleted successfully"},
-    )

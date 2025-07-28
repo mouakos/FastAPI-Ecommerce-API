@@ -2,8 +2,6 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from typing import Optional
 
-from fastapi.responses import JSONResponse
-
 from app.reviews.schemas import (
     AdminReviewUpdate,
     ReviewCreate,
@@ -11,7 +9,7 @@ from app.reviews.schemas import (
     ReviewUpdate,
 )
 from app.reviews.service import ReviewService
-from app.core.dependencies import DbSession, CurrentUser, RoleChecker
+from app.api.dependencies import DbSession, CurrentUser, RoleChecker
 from app.users.schemas import UserRole
 from app.utils.paginate import PaginatedResponse
 
@@ -154,14 +152,12 @@ async def get_review(
     return await ReviewService.get_review(db, review_id)
 
 
-@router.delete("/{review_id}", summary="Delete a review")
+@router.delete(
+    "/{review_id}", summary="Delete a review", status_code=status.HTTP_204_NO_CONTENT
+)
 async def delete_review(
     review_id: UUID,
     db: DbSession,
     current_user: CurrentUser,
-) -> JSONResponse:
+) -> None:
     await ReviewService.delete_review(db, review_id, current_user.id)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"message": "Review deleted successfully"},
-    )

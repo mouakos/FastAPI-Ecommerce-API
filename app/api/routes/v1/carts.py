@@ -4,7 +4,7 @@ from typing import List
 
 from app.carts.schemas import CartItemCreate, CartItemRead, CartItemUpdate, CartRead
 from app.carts.service import CartService
-from app.core.dependencies import DbSession, CurrentUser
+from app.api.dependencies import DbSession, CurrentUser
 
 
 router = APIRouter(prefix="/api/v1/cart", tags=["Carts"])

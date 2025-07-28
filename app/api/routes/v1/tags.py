@@ -1,9 +1,8 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, status, Query
-from fastapi.responses import JSONResponse
 from uuid import UUID
 
-from app.core.dependencies import DbSession, RoleChecker
+from app.api.dependencies import DbSession, RoleChecker
 from app.tags.schemas import TagCreate, TagRead, TagUpdate
 from app.tags.service import TagService
 from app.users.schemas import UserRole
@@ -74,10 +73,11 @@ async def update_tag(tag_id: UUID, data: TagUpdate, db_session: DbSession) -> Ta
     return await TagService.update_tag(db_session, tag_id, data)
 
 
-@router.delete("/{tag_id}", summary="Delete a tag", dependencies=[role_checker_admin])
-async def delete_tag(tag_id: UUID, db_session: DbSession) -> JSONResponse:
+@router.delete(
+    "/{tag_id}",
+    summary="Delete a tag",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[role_checker_admin],
+)
+async def delete_tag(tag_id: UUID, db_session: DbSession) -> None:
     await TagService.delete_tag(db_session, tag_id)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"message": "Tag deleted successfully"},
-    )

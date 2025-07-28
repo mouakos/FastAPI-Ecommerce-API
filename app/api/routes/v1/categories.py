@@ -1,13 +1,13 @@
 from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
-from fastapi.responses import JSONResponse
+
 from app.categories.schemas import (
     CategoryCreate,
     CategoryRead,
     CategoryUpdate,
 )
-from app.core.dependencies import DbSession, RoleChecker
+from app.api.dependencies import DbSession, RoleChecker
 from app.categories.service import CategoryService
 from app.users.schemas import UserRole
 from app.utils.paginate import PaginatedResponse
@@ -97,10 +97,7 @@ async def update_category(
     "/{category_id}",
     dependencies=[role_checker_admin],
     summary="Delete Category",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_category(db_session: DbSession, category_id: UUID) -> JSONResponse:
+async def delete_category(db_session: DbSession, category_id: UUID) -> None:
     await CategoryService.delete_category(db_session, category_id)
-    return JSONResponse(
-        status_code=status.HTTP_204_NO_CONTENT,
-        content={"message": "Category deleted successfully"},
-    )

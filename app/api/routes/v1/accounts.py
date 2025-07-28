@@ -1,10 +1,8 @@
 from fastapi import APIRouter, status
-from fastapi.responses import JSONResponse
 
 from app.users.schemas import PasswordUpdate, UserRead, UserUpdate
 from app.users.service import UserService
-from app.core.dependencies import CurrentUser
-from app.core.dependencies import DbSession
+from app.api.dependencies import CurrentUser, DbSession
 
 router = APIRouter(prefix="/api/v1/me", tags=["Accounts"])
 
@@ -28,26 +26,18 @@ async def update_account(
 @router.put(
     "/change-password",
     summary="Change Password of current logged-in User",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def change_password(
     db_session: DbSession, current_user: CurrentUser, password_data: PasswordUpdate
-) -> JSONResponse:
+) -> None:
     await UserService.change_user_password(db_session, current_user.id, password_data)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"message": "Password changed successfully"},
-    )
 
 
 @router.delete(
     "/",
     summary="Delete current logged-in User Account",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_account(
-    db_session: DbSession, current_user: CurrentUser
-) -> JSONResponse:
+async def delete_account(db_session: DbSession, current_user: CurrentUser) -> None:
     await UserService.delete_user(db_session, current_user.id)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"message": "User deleted successfully"},
-    )

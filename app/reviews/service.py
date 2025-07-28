@@ -7,7 +7,7 @@ from uuid import UUID
 
 from app.models.review import Review
 from app.models.product import Product
-from app.models.user import User, UserRole
+from app.models.user import User
 from app.reviews.schemas import (
     AdminReviewUpdate,
     ReviewCreate,
@@ -21,6 +21,7 @@ from app.core.exceptions import (
     ReviewNotFound,
     UserNotFound,
 )
+from app.users.schemas import UserRole
 from app.utils.paginate import PaginatedResponse
 
 
@@ -254,6 +255,8 @@ class ReviewService:
 
         Raises:
             ReviewNotFound: If the review does not exist or does not belong to the user.
+            UserNotFound: If the user does not exist.
+            InsufficientPermission: If the user does not own the review and is not an admin.
         """
         user = await db.get(User, user_id)
         if not user:

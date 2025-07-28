@@ -1,9 +1,8 @@
 from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
-from fastapi.responses import JSONResponse
 
-from app.core.dependencies import DbSession, RoleChecker
+from app.api.dependencies import DbSession, RoleChecker
 from app.users.schemas import (
     AdminUserUpdate,
     UserRead,
@@ -20,7 +19,6 @@ role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 @router.get(
     "/",
     response_model=PaginatedResponse[UserRead],
-    status_code=status.HTTP_200_OK,
     summary="Get All Users",
     dependencies=[role_checker_admin],
 )
@@ -37,14 +35,18 @@ async def get_all_users(
     search: Optional[str] = Query(default="", description="Search based email"),
 ) -> PaginatedResponse[UserRead]:
     return await UserService.get_all_users(
-        db_session, page=page, page_size=page_size, search=search, role=role, is_active=is_active
+        db_session,
+        page=page,
+        page_size=page_size,
+        search=search,
+        role=role,
+        is_active=is_active,
     )
 
 
 @router.get(
     "/{user_id}",
     response_model=UserRead,
-    status_code=status.HTTP_200_OK,
     summary="Get User by ID",
     dependencies=[role_checker_admin],
 )
@@ -55,7 +57,6 @@ async def get_user(db_session: DbSession, user_id: UUID) -> UserRead:
 @router.patch(
     "/{user_id}",
     response_model=UserRead,
-    status_code=status.HTTP_200_OK,
     summary="Update User by ID",
     dependencies=[role_checker_admin],
 )
@@ -71,10 +72,7 @@ async def update_user(
     "/{user_id}",
     summary="Delete User by ID",
     dependencies=[role_checker_admin],
+    status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_user(db_session: DbSession, user_id: UUID) -> JSONResponse:
+async def delete_user(db_session: DbSession, user_id: UUID) -> None:
     await UserService.delete_user(db_session, user_id)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"message": "User deleted successfully"},
-    )

@@ -2,7 +2,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, status
 
-from app.core.dependencies import AccessTokenBearer, DbSession, RefreshTokenBearer
+from app.api.dependencies import AccessTokenBearer, DbSession, RefreshTokenBearer
 from app.users.schemas import UserRead, UserCreate
 from app.users.service import UserService
 from app.users.schemas import UserLogin, TokenResponse
@@ -28,7 +28,6 @@ async def signup(db_session: DbSession, user_create: UserCreate) -> UserRead:
 async def login(
     db_session: DbSession, form_data: OAuth2PasswordRequestForm = Depends()
 ) -> TokenResponse:
-
     login_data = UserLogin(email=form_data.username, password=form_data.password)
     return await UserService.login(db_session, login_data)
 

@@ -22,6 +22,9 @@ class CategoryUpdate(BaseModel):
     description: Optional[str] = Field(
         None, max_length=500, description="Description of the category"
     )
+    is_active: Optional[bool] = Field(
+        None, description="Indicates if the category is active"
+    )
 
 
 class CategoryRead(CategoryBase):

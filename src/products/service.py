@@ -1,3 +1,5 @@
+from math import ceil
+from typing import Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
 from uuid import UUID
@@ -22,9 +24,62 @@ from src.core.exceptions import (
 )
 from src.reviews.schemas import ReviewRead
 from src.tags.schemas import TagRead
+from src.utils.paginate import PaginatedResponse
 
 
 class ProductService:
+    @staticmethod
+    async def list_products(
+        db_session: AsyncSession,
+        page: int,
+        page_size: int,
+        search: Optional[str],
+        is_active: bool,
+    ) -> PaginatedResponse[ProductRead]:
+        """List products with pagination and filtering.
+
+        Args:
+            db_session (AsyncSession): The database session.
+            page (int): The page number for pagination.
+            page_size (int): The number of products per page.
+            search (Optional[str]): Search term to filter products by name.
+            is_active (bool): Filter by active status.
+
+        Returns:
+            PaginatedResponse[ProductRead]: A paginated response containing the list of products.
+        """
+        # Get total count (without limit/offset)
+        count_stmt = (
+            select(func.count())
+            .select_from(Product)
+            .where(
+                (Product.name.ilike(f"%{search}%")) if search else True,
+                (Product.is_active == is_active) if is_active is not None else True,
+            )
+        )
+        total = (await db_session.exec(count_stmt)).one()
+
+        # Get paginated products
+        result = await db_session.exec(
+            select(Product)
+            .where(
+                (Product.name.ilike(f"%{search}%")) if search else True,
+                (Product.is_active == is_active) if is_active is not None else True,
+            )
+            .order_by(Product.created_at.desc())
+            .limit(page_size)
+            .offset((page - 1) * page_size)
+        )
+        products = result.all()
+
+        return PaginatedResponse[ProductRead](
+            total=total,
+            page=page,
+            size=page_size,
+            pages=ceil(total / page_size) if total else 1,
+            items=[ProductRead(**product.model_dump()) for product in products],
+        )
+
     @staticmethod
     async def create_product(
         db_session: AsyncSession, data: ProductCreate
@@ -117,19 +172,6 @@ class ProductService:
             tags=tags_read,
             reviews=reviews_read,
         )
-
-    @staticmethod
-    async def list_products(db_session: AsyncSession) -> list[ProductRead]:
-        """List all products.
-
-        Args:
-            db_session (AsyncSession): The database session.
-
-        Returns:
-            list[ProductRead]: A list of all products.
-        """
-        result = await db_session.exec(select(Product))
-        return [ProductRead(**prod.model_dump()) for prod in result.all()]
 
     @staticmethod
     async def update_product(

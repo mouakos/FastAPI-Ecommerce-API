@@ -24,6 +24,7 @@ class Product(SQLModel, table=True):
     stock: int = Field(default=0, nullable=False)
     sku: str = Field(index=True, unique=True, nullable=False)
     rating: float = Field(default=0.0, nullable=False)
+    is_active: bool = Field(default=True, nullable=False)
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

@@ -1,4 +1,6 @@
 from datetime import datetime
+from math import ceil
+from typing import Optional
 from uuid import UUID
 from sqlmodel import select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -8,24 +10,57 @@ from src.tags.schemas import TagCreate, TagRead, TagUpdate
 from src.core.exceptions import TagAlreadyExists, TagNotFound
 from slugify import slugify
 
+from src.utils.paginate import PaginatedResponse
+
 
 class TagService:
     """Service class for managing tags in the system."""
 
     @staticmethod
-    async def list_tags(db_session: AsyncSession) -> list[TagRead]:
+    async def list_tags(
+        db_session: AsyncSession, page: int, page_size: int, search: Optional[str]
+    ) -> PaginatedResponse[TagRead]:
         """
-        Retrieve all tags from the database.
+        Retrieve a paginated list of tags with optional search functionality.
 
         Args:
             db_session (AsyncSession): The database session.
+            page (int): The page number for pagination.
+            page_size (int): The number of tags per page.
+            search (Optional[str]): A search term to filter tags by name.
 
         Returns:
-            list[TagRead]: A list of tags.
+            PaginatedResponse[TagRead]: A paginated response containing the tags.
         """
-        result = await db_session.exec(select(Tag))
+        # Get total count (without limit/offset)
+        count_stmt = (
+            select(func.count())
+            .select_from(Tag)
+            .where(
+                (Tag.name.ilike(f"%{search}%")) if search else True,
+            )
+        )
+        total = (await db_session.exec(count_stmt)).one()
+
+        # Get paginated tags
+        result = await db_session.exec(
+            select(Tag)
+            .where(
+                (Tag.name.ilike(f"%{search}%")) if search else True,
+            )
+            .order_by(Tag.created_at.desc())
+            .limit(page_size)
+            .offset((page - 1) * page_size)
+        )
         tags = result.all()
-        return [TagRead(**tag.model_dump()) for tag in tags]
+
+        return PaginatedResponse[TagRead](
+            total=total,
+            page=page,
+            size=page_size,
+            pages=ceil(total / page_size) if total else 1,
+            data=[TagRead(**tag.model_dump()) for tag in tags],
+        )
 
     @staticmethod
     async def get_tag(db_session: AsyncSession, tag_id: UUID) -> TagRead:

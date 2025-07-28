@@ -14,7 +14,7 @@ router = APIRouter(prefix="/tags", tags=["Tags"])
 role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 
 
-@router.get("/", response_model=PaginatedResponse[TagRead], summary="List all tags")
+@router.get("/", response_model=PaginatedResponse[TagRead], summary="List tags")
 async def list_tags(
     db_session: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),

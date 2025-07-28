@@ -31,10 +31,13 @@ async def get_all_users(
         default=10, ge=1, le=100, description="Number of users per page"
     ),
     role: Optional[UserRole] = Query(default=None, description="Filter by user role"),
+    is_active: Optional[bool] = Query(
+        default=None, description="Filter by active status"
+    ),
     search: Optional[str] = Query(default="", description="Search based email"),
 ) -> PaginatedResponse[UserRead]:
     return await UserService.get_all_users(
-        db_session, page=page, page_size=page_size, search=search, role=role
+        db_session, page=page, page_size=page_size, search=search, role=role, is_active=is_active
     )
 
 

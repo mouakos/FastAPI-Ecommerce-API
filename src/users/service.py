@@ -38,6 +38,7 @@ class UserService:
         page: int,
         page_size: int,
         role: Optional[UserRole],
+        is_active: Optional[bool],
         search: Optional[str],
     ) -> PaginatedResponse[UserRead]:
         """Retrieve all users with pagination and optional filters.
@@ -59,6 +60,7 @@ class UserService:
             .where(
                 (User.role == role) if role else True,
                 (User.email.ilike(f"%{search}%")) if search else True,
+                (User.is_active == is_active) if is_active is not None else True,
             )
         )
         total = (await db_session.exec(count_stmt)).one()
@@ -69,6 +71,7 @@ class UserService:
             .where(
                 (User.role == role) if role else True,
                 (User.email.ilike(f"%{search}%")) if search else True,
+                (User.is_active == is_active) if is_active is not None else True,
             )
             .order_by(User.created_at.desc())
             .limit(page_size)

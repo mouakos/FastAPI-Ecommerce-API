@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from datetime import datetime
 
 from app.carts.schemas import CartItemCreate, CartItemRead, CartItemUpdate, CartRead
-from app.core.exceptions import CartItemNotFound, ProductNotFound, UserNotFound
+from app.core.exceptions import CartItemNotFound, InsufficientStock, ProductNotFound, UserNotFound
 from app.models.cart import Cart
 from app.models.cart_item import CartItem
 from app.models.product import Product
@@ -53,6 +53,9 @@ class CartService:
 
         if not product:
             raise ProductNotFound()
+        
+        if data.quantity > product.stock:
+            raise InsufficientStock()
 
         stmt = select(CartItem).where(
             CartItem.cart_id == cart.id, CartItem.product_id == data.product_id
@@ -105,7 +108,10 @@ class CartService:
 
         if not item:
             raise CartItemNotFound()
-
+        
+        if data.quantity > item.product.stock:
+            raise InsufficientStock()
+            
         item.quantity = data.quantity
         item.subtotal = item.unit_price * item.quantity
         item.updated_at = datetime.utcnow()

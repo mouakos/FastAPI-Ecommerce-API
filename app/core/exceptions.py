@@ -122,3 +122,8 @@ class CartItemNotFound(BaseApiError):
     """Cart item with the given ID does not exist"""
 
     pass
+
+class InsufficientStock(BaseApiError):
+    """Insufficient stock for the product"""
+
+    pass

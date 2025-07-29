@@ -10,6 +10,7 @@ from app.core.exceptions import (
     CategoryHasProducts,
     CategoryNotFound,
     InsufficientPermission,
+    InsufficientStock,
     InvalidCredentials,
     InvalidPassword,
     InvalidToken,
@@ -263,6 +264,18 @@ def register_all_errors(app: FastAPI):
                 "message": "Cart item not found",
                 "resolution": "Please check the cart item ID",
                 "error_code": "cart_item_not_found",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        InsufficientStock,
+        create_exception_handler(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            initial_detail={
+                "message": "Insufficient stock for the product",
+                "resolution": "Please reduce the quantity or check product availability",
+                "error_code": "insufficient_stock",
             },
         ),
     )

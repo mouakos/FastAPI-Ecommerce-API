@@ -6,8 +6,7 @@ from datetime import datetime
 
 from app.carts.schemas import CartItemCreate, CartItemRead, CartItemUpdate, CartRead
 from app.core.exceptions import CartItemNotFound, InsufficientStock, ProductNotFound, UserNotFound
-from app.models.cart import Cart
-from app.models.cart_item import CartItem
+from app.models.cart import Cart, CartItem
 from app.models.product import Product
 
 

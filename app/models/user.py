@@ -5,6 +5,7 @@ from datetime import datetime, date
 from uuid import UUID, uuid4
 
 from app.models.cart import Cart
+from app.models.order import Order
 
 if TYPE_CHECKING:
     from app.models.review import Review
@@ -44,3 +45,8 @@ class User(SQLModel, table=True):
 
     # Relationship with cart - one-to-one
     cart: "Cart" = Relationship(back_populates="user")
+
+    # Relationship with orders - one-to-many
+    orders: list["Order"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"lazy": "selectin"}
+    )

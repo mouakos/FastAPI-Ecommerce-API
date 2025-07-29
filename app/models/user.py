@@ -50,7 +50,7 @@ class User(SQLModel, table=True):
     )
 
     # Relationship with cart - one-to-one
-    cart: "Cart" = Relationship(back_populates="user")
+    cart: Optional["Cart"] = Relationship(back_populates="user")
 
     # Relationship with orders - one-to-many
     orders: list["Order"] = Relationship(

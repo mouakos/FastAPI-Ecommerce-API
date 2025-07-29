@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from app.models.category import Category
     from app.models.tag import Tag
     from app.models.review import Review
-    from app.models.cart_item import CartItem
+    from app.models.cart import CartItem
 
 
 class Product(SQLModel, table=True):
@@ -31,9 +31,7 @@ class Product(SQLModel, table=True):
 
     # Relationship with category - many-to-one
     category_id: UUID = Field(default=None, foreign_key="categories.id", nullable=False)
-    category: "Category" = Relationship(
-        back_populates="products", sa_relationship_kwargs={"lazy": "selectin"}
-    )
+    category: Optional["Category"] = Relationship(back_populates="products")
 
     # Relationship with tags - many-to-many
     tags: list["Tag"] = Relationship(

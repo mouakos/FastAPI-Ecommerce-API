@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship
 from uuid import UUID, uuid4
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from .user import User
@@ -43,4 +43,4 @@ class CartItem(SQLModel, table=True):
 
     # Relationship with product - many-to-one
     product_id: UUID = Field(foreign_key="products.id", nullable=False)
-    product: "Product" = Relationship(back_populates="cart_items")
+    product: Optional["Product"] = Relationship(back_populates="cart_items")

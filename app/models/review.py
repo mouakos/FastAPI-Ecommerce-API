@@ -20,8 +20,8 @@ class Review(SQLModel, table=True):
 
     # Relationship with product - many-to-one
     product_id: UUID = Field(foreign_key="products.id", nullable=False)
-    product: "Product" = Relationship(back_populates="reviews")
+    product: Optional["Product"] = Relationship(back_populates="reviews")
 
     # Relationship with user - many-to-one
     user_id: UUID = Field(foreign_key="users.id", nullable=False)
-    user: "User" = Relationship(back_populates="reviews")
+    user: Optional["User"] = Relationship(back_populates="reviews")

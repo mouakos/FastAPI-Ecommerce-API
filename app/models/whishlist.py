@@ -12,7 +12,9 @@ class Wishlist(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
     # Relationship to wishlist items
-    items: List["WishlistItem"] = Relationship(back_populates="wishlist")
+    items: List["WishlistItem"] = Relationship(
+        back_populates="wishlist", sa_relationship_kwargs={"lazy": "selectin"}
+    )
 
 
 class WishlistItem(SQLModel, table=True):

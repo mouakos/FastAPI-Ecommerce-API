@@ -7,7 +7,6 @@ from enum import Enum
 
 if TYPE_CHECKING:
     from app.models.user import User
-    from app.models.address import Address
 
 
 class OrderStatus(str, Enum):
@@ -42,13 +41,6 @@ class Order(SQLModel, table=True):
     )
     billing_address_id: Optional[UUID] = Field(
         default=None, foreign_key="addresses.id", index=True
-    )
-
-    shipping_address: Optional["Address"] = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[Order.shipping_address_id]"}
-    )
-    billing_address: Optional["Address"] = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[Order.billing_address_id]"}
     )
 
 

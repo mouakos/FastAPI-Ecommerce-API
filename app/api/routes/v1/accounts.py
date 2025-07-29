@@ -23,7 +23,7 @@ async def update_account(
     return await UserService.update_user(db_session, current_user.id, user_update)
 
 
-@router.put(
+@router.patch(
     "/change-password",
     summary="Change Password of current logged-in User",
     status_code=status.HTTP_204_NO_CONTENT,

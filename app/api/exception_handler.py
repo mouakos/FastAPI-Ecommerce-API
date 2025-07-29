@@ -24,6 +24,7 @@ from app.core.exceptions import (
     TagNotFound,
     UserAlreadyExists,
     UserNotFound,
+    CartItemNotFound,
 )
 
 
@@ -251,6 +252,17 @@ def register_all_errors(app: FastAPI):
                 "message": "Review for this product by this user already exists",
                 "resolution": "Please update your existing review instead",
                 "error_code": "review_exists",
+            },
+        ),
+    )
+    app.add_exception_handler(
+        CartItemNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            initial_detail={
+                "message": "Cart item not found",
+                "resolution": "Please check the cart item ID",
+                "error_code": "cart_item_not_found",
             },
         ),
     )

@@ -14,7 +14,7 @@ class CartItemCreate(CartItemBase):
 
 class CartItemRead(CartItemBase):
     id: UUID = Field(..., description="Unique identifier for the cart item")
-    product_id: UUID = Field(..., description="Unique identifier for the product")
+    unit_price: float = Field(..., description="Unit price of the product")
     subtotal: float = Field(..., description="Subtotal price of the item in the cart")
 
 

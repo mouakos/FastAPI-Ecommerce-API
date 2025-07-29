@@ -1,24 +1,44 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 from uuid import UUID
 from typing import List
 
 from app.carts.schemas import CartItemCreate, CartItemRead, CartItemUpdate, CartRead
 from app.carts.service import CartService
-from app.api.dependencies import DbSession, CurrentUser
+from app.api.dependencies import DbSession, CurrentUser, RoleChecker
+from app.users.schemas import UserRole
 
 
 router = APIRouter(prefix="/api/v1/cart", tags=["Carts"])
+role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 
 
-@router.get("/", response_model=List[CartRead], summary="Get the user's cart")
+@router.get("/", response_model=List[CartRead], summary="Get cart")
 async def get_cart(
     db: DbSession,
     current_user: CurrentUser,
 ):
-    return await CartService.get_or_create_cart(db, current_user.id)
+    return await CartService.get_cart(db, current_user.id)
 
 
-@router.post("/items", response_model=CartItemRead, status_code=status.HTTP_201_CREATED)
+@router.get(
+    "/admin/{user_id}",
+    response_model=List[CartRead],
+    dependencies=[role_checker_admin],
+    summary="Get cart for a specific user (admin only)",
+)
+async def get_cart_for_user(
+    user_id: UUID,
+    db: DbSession,
+):
+    return await CartService.get_cart(db, user_id)
+
+
+@router.post(
+    "/items",
+    response_model=CartItemRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add item to my cart",
+)
 async def add_item(
     data: CartItemCreate,
     db: DbSession,
@@ -28,7 +48,9 @@ async def add_item(
 
 
 @router.patch(
-    "/items/{item_id}", response_model=CartItemRead, summary="Update cart item quantity"
+    "/items/{item_id}",
+    response_model=CartItemRead,
+    summary="Update cart item quantity",
 )
 async def update_item(
     item_id: UUID,
@@ -52,7 +74,11 @@ async def remove_item(
     await CartService.remove_item(db, current_user.id, item_id)
 
 
-@router.delete("/clear", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/clear",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Clear cart",
+)
 async def clear_cart(
     db: DbSession,
     current_user: CurrentUser,

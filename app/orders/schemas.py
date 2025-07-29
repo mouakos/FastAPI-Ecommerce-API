@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, Field
 
@@ -23,11 +24,26 @@ class OrderItemRead(OrderItemCreate):
     )
 
 
+class OrderCreate(BaseModel):
+    shipping_address_id: UUID = Field(
+        ..., description="ID of the shipping address for the order"
+    )
+    billing_address_id: Optional[UUID] = Field(
+        default=None, description="ID of the billing address for the order"
+    )
+
+
 class OrderRead(BaseModel):
     id: UUID = Field(..., description="Unique identifier of the order")
     status: str = Field(..., description="Current status of the order")
     total_amount: float = Field(..., description="Total amount of the order")
     user_id: UUID = Field(..., description="ID of the user who placed the order")
+    shipping_address_id: UUID = Field(
+        ..., description="ID of the shipping address for the order"
+    )
+    billing_address_id: Optional[UUID] = Field(
+        default=None, description="ID of the billing address for the order"
+    )
     created_at: datetime = Field(
         ..., description="Timestamp when the order was created"
     )

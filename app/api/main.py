@@ -8,6 +8,7 @@ from app.api.routes.v1 import (
     tags,
     reviews,
     carts,
+    wishlists,
 )
 
 
@@ -20,3 +21,4 @@ api_router.include_router(categories.router)
 api_router.include_router(products.router)
 api_router.include_router(tags.router)
 api_router.include_router(reviews.router)
+api_router.include_router(wishlists.router)

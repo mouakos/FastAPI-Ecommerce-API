@@ -9,6 +9,7 @@ from app.models.order import Order
 
 if TYPE_CHECKING:
     from app.models.review import Review
+    from app.models.address import Address
 
 
 class Gender(str, Enum):
@@ -37,6 +38,11 @@ class User(SQLModel, table=True):
 
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+
+    # Relationship with addresses - one-to-many
+    addresses: list["Address"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"lazy": "selectin"}
+    )
 
     # Relationship with reviews - one-to-many
     reviews: list["Review"] = Relationship(

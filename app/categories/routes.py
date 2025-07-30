@@ -7,7 +7,7 @@ from app.categories.schemas import (
     CategoryRead,
     CategoryUpdate,
 )
-from app.api.dependencies import DbSession, RoleChecker
+from app.dependencies import DbSession, RoleChecker
 from app.categories.service import CategoryService
 from app.users.schemas import UserRole
 from app.utils.paginate import PaginatedResponse
@@ -18,10 +18,13 @@ router = APIRouter(prefix="/api/v1/categories", tags=["Categories"])
 role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 
 
+# User endpoints
 @router.get(
-    "/", response_model=PaginatedResponse[CategoryRead], summary="List Categories"
+    "/",
+    response_model=PaginatedResponse[CategoryRead],
+    summary="List active categories",
 )
-async def list_categories(
+async def list_active_categories(
     db_session: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
     page_size: int = Query(
@@ -35,11 +38,29 @@ async def list_categories(
 
 
 @router.get(
+    "/{category_id}", response_model=CategoryRead, summary="Get category details"
+)
+async def get_category(
+    db_session: DbSession,
+    category_id: UUID,
+):
+    category = await CategoryService.get_category(db_session, category_id)
+    if not category.is_active:
+        # Hide inactive categories from normal users
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Category not found")
+    return category
+
+
+# Admin endpoints
+@router.get(
     "/admin/",
     response_model=PaginatedResponse[CategoryRead],
-    summary="List all Categories",
+    summary="List all categories (admin)",
+    dependencies=[role_checker_admin],
 )
-async def list_all_categories(
+async def admin_list_all_categories(
     db_session: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
     page_size: int = Query(
@@ -56,9 +77,12 @@ async def list_all_categories(
 
 
 @router.get(
-    "/{category_id}", response_model=CategoryRead, summary="Get Category Details"
+    "/admin/{category_id}",
+    response_model=CategoryRead,
+    summary="Get category details (admin)",
+    dependencies=[role_checker_admin],
 )
-async def get_category(
+async def admin_get_category(
     db_session: DbSession,
     category_id: UUID,
 ):
@@ -66,13 +90,13 @@ async def get_category(
 
 
 @router.post(
-    "/",
+    "/admin/",
     response_model=CategoryRead,
     status_code=status.HTTP_201_CREATED,
-    summary="Create New Category",
+    summary="Create new category (admin)",
     dependencies=[role_checker_admin],
 )
-async def create_category(
+async def admin_create_category(
     db_session: DbSession,
     category_data: CategoryCreate,
 ):
@@ -80,12 +104,12 @@ async def create_category(
 
 
 @router.patch(
-    "/{category_id}",
+    "/admin/{category_id}",
     response_model=CategoryRead,
-    summary="Update Category",
+    summary="Update category (admin)",
     dependencies=[role_checker_admin],
 )
-async def update_category(
+async def admin_update_category(
     db_session: DbSession,
     category_id: UUID,
     update_data: CategoryUpdate,
@@ -94,10 +118,10 @@ async def update_category(
 
 
 @router.delete(
-    "/{category_id}",
+    "/admin/{category_id}",
     dependencies=[role_checker_admin],
-    summary="Delete Category",
+    summary="Delete category (admin)",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_category(db_session: DbSession, category_id: UUID) -> None:
+async def admin_delete_category(db_session: DbSession, category_id: UUID) -> None:
     await CategoryService.delete_category(db_session, category_id)

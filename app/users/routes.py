@@ -2,10 +2,11 @@ from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 
-from app.api.dependencies import DbSession, RoleChecker
+from app.dependencies import DbSession, RoleChecker
 from app.users.schemas import (
     AdminUserUpdate,
     UserRead,
+    UserReadDetail,
     UserRole,
 )
 from app.users.service import UserService
@@ -46,12 +47,12 @@ async def get_all_users(
 
 @router.get(
     "/{user_id}",
-    response_model=UserRead,
-    summary="Get User by ID",
+    response_model=UserReadDetail,
+    summary="Get User details by ID",
     dependencies=[role_checker_admin],
 )
-async def get_user(db_session: DbSession, user_id: UUID) -> UserRead:
-    return await UserService.get_user(db_session, user_id)
+async def get_user(db_session: DbSession, user_id: UUID) -> UserReadDetail:
+    return await UserService.get_user_by_id(db_session, user_id)
 
 
 @router.patch(

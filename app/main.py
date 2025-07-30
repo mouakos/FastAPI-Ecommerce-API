@@ -1,10 +1,10 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
-from app.api.main import api_router
+from app.api import api_router
 from app.database.core import init_db
-from app.core.logging import LogLevel, setup_logging
-from app.api.exception_handler import register_all_errors
+from app.logging import LogLevel, setup_logging
+from app.exception_handler import register_all_errors
 
 setup_logging(LogLevel.info)
 

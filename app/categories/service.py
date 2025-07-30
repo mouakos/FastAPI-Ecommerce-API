@@ -12,10 +12,9 @@ from app.categories.schemas import (
     CategoryUpdate,
 )
 from app.models.category import Category
-from app.core.exceptions import (
-    CategoryAlreadyExists,
-    CategoryHasProducts,
-    CategoryNotFound,
+from app.exceptions import (
+    ConflictError,
+    NotFoundError,
 )
 from app.utils.paginate import PaginatedResponse
 
@@ -84,7 +83,7 @@ class CategoryService:
             category_id (UUID): The ID of the category to retrieve.
 
         Raises:
-            CategoryNotFound: If the category is not found.
+            NotFoundError: If the category is not found.
 
         Returns:
             CategoryRead | CategoryReadDetail: The category details, either with or without children.
@@ -93,7 +92,7 @@ class CategoryService:
         result = await db_session.exec(stmt)
         category = result.first()
         if not category:
-            raise CategoryNotFound()
+            raise NotFoundError(f"Category with ID {category_id} not found")
         return category
 
     @staticmethod
@@ -107,7 +106,7 @@ class CategoryService:
             category_data (CategoryCreate): The category data to create.
 
         Raises:
-            CategoryAlreadyExists: If a category with the same name already exists.
+            ConflictError: If a category with the same name already exists.
 
         Returns:
             CategoryRead: The created category details.
@@ -118,7 +117,9 @@ class CategoryService:
             select(Category).where(func.lower(Category.slug) == func.lower(slug))
         )
         if exists.first():
-            raise CategoryAlreadyExists()
+            raise ConflictError(
+                f"Category with name {category_data.name} already exists."
+            )
 
         category = Category(**category_data.model_dump(), slug=slug)
         db_session.add(category)
@@ -138,15 +139,15 @@ class CategoryService:
             update_data (CategoryUpdate): The updated category data.
 
         Raises:
-            CategoryNotFound: If the category is not found.
-            CategoryAlreadyExists: If a category with the same name already exists.
+            NotFoundError: If the category is not found.
+            ConflictError: If a category with the same name already exists.
 
         Returns:
             CategoryRead: The updated category details.
         """
         category = await db_session.get(Category, category_id)
         if not category:
-            raise CategoryNotFound()
+            raise NotFoundError(f"Category with ID {category_id} not found")
 
         if update_data.name and update_data.name.lower() != category.name.lower():
             new_slug = slugify(update_data.name)
@@ -156,7 +157,7 @@ class CategoryService:
                 .where(Category.id != category_id)
             )
             if conflict.first():
-                raise CategoryAlreadyExists()
+                raise ConflictError(f"Category with slug {new_slug} already exists.")
             category.slug = new_slug
 
         # Apply updates
@@ -182,10 +183,12 @@ class CategoryService:
         category = await db_session.get(Category, category_id)
 
         if not category:
-            raise CategoryNotFound()
+            raise NotFoundError(f"Category with ID {category_id} not found")
 
         if category.products:
-            raise CategoryHasProducts()
+            raise ConflictError(
+                f"Category with ID {category_id} has associated products."
+            )
 
         await db_session.delete(category)
         await db_session.commit()

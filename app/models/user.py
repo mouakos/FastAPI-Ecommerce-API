@@ -3,6 +3,7 @@ from typing import Optional, TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel
 from datetime import datetime, date
 from uuid import UUID, uuid4
+from app.utils.date_time_provider import get_utc_now
 
 from app.models.cart import Cart
 from app.models.order import Order
@@ -10,6 +11,7 @@ from app.models.order import Order
 if TYPE_CHECKING:
     from app.models.review import Review
     from app.models.address import Address
+    from app.models.wishlist import Wishlist
 
 
 class Gender(str, Enum):
@@ -36,8 +38,8 @@ class User(SQLModel, table=True):
     role: UserRole = Field(default=UserRole.customer, nullable=False)
     is_active: bool = Field(default=True, nullable=False)
 
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
-    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    created_at: datetime = Field(default_factory=get_utc_now, nullable=False)
+    updated_at: datetime = Field(default_factory=get_utc_now, nullable=False)
 
     # Relationship with addresses - one-to-many
     addresses: list["Address"] = Relationship(
@@ -56,3 +58,6 @@ class User(SQLModel, table=True):
     orders: list["Order"] = Relationship(
         back_populates="user", sa_relationship_kwargs={"lazy": "selectin"}
     )
+    
+    # Relationship with wishlist - one-to-one
+    wishlist: Optional["Wishlist"] = Relationship(back_populates="user")

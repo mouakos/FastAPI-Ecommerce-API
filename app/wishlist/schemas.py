@@ -23,6 +23,9 @@ class WishlistRead(BaseModel):
     id: UUID = Field(..., description="Unique identifier of the wishlist")
     user_id: UUID = Field(..., description="ID of the user who owns the wishlist")
     created_at: datetime = Field(..., description="Creation timestamp of the wishlist")
+    updated_at: datetime = Field(
+        ..., description="Last update timestamp of the wishlist"
+    )
     items: list[WishlistItemRead] = Field(
         default_factory=list, description="List of wishlist items"
     )

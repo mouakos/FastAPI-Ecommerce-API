@@ -9,7 +9,7 @@ from app.reviews.schemas import (
     ReviewUpdate,
 )
 from app.reviews.service import ReviewService
-from app.api.dependencies import DbSession, CurrentUser, RoleChecker
+from app.dependencies import DbSession, CurrentUser, RoleChecker
 from app.users.schemas import UserRole
 from app.utils.paginate import PaginatedResponse
 
@@ -18,10 +18,11 @@ router = APIRouter(prefix="/api/v1/reviews", tags=["Reviews"])
 admin_role_checker = Depends(RoleChecker([UserRole.admin]))
 
 
+# User endpoints
 @router.get(
     "/product/{product_id}",
     response_model=PaginatedResponse[ReviewRead],
-    summary="List product reviews",
+    summary="List published product reviews",
 )
 async def list_product_reviews(
     product_id: UUID,
@@ -54,13 +55,65 @@ async def list_product_reviews(
     )
 
 
+@router.post(
+    "/product/{product_id}",
+    response_model=ReviewRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a review to a product",
+)
+async def create_review(
+    product_id: UUID,
+    data: ReviewCreate,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> ReviewRead:
+    return await ReviewService.create_review(db, data, current_user.id, product_id)
+
+
+@router.patch(
+    "/{review_id}",
+    response_model=ReviewRead,
+    summary="Update my review",
+)
+async def update_review(
+    review_id: UUID,
+    data: ReviewUpdate,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> ReviewRead:
+    return await ReviewService.update_review(db, review_id, current_user.id, data)
+
+
+@router.get(
+    "/{review_id}",
+    response_model=ReviewRead,
+    summary="Get review by ID",
+)
+async def get_review(
+    review_id: UUID, db: DbSession, current_user: CurrentUser
+) -> ReviewRead:
+    return await ReviewService.get_review(db, review_id)
+
+
+@router.delete(
+    "/{review_id}", summary="Delete my review", status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_review(
+    review_id: UUID,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> None:
+    await ReviewService.delete_review(db, review_id, current_user.id)
+
+
+# Admin endpoints
 @router.get(
     "/admin/product/{product_id}",
     response_model=PaginatedResponse[ReviewRead],
-    summary="List all product reviews",
+    summary="List all product reviews (admin)",
     dependencies=[admin_role_checker],
 )
-async def list_all_product_reviews(
+async def admin_list_all_product_reviews(
     product_id: UUID,
     db: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
@@ -95,42 +148,13 @@ async def list_all_product_reviews(
     )
 
 
-@router.post(
-    "/product/{product_id}",
-    response_model=ReviewRead,
-    status_code=status.HTTP_201_CREATED,
-    summary="Add a review to a product",
-)
-async def create_review(
-    product_id: UUID,
-    data: ReviewCreate,
-    db: DbSession,
-    current_user: CurrentUser,
-) -> ReviewRead:
-    return await ReviewService.create_review(db, data, current_user.id, product_id)
-
-
-@router.patch(
-    "/{review_id}",
-    response_model=ReviewRead,
-    summary="Update a review",
-)
-async def update_review(
-    review_id: UUID,
-    data: ReviewUpdate,
-    db: DbSession,
-    current_user: CurrentUser,
-) -> ReviewRead:
-    return await ReviewService.update_review(db, review_id, current_user.id, data)
-
-
 @router.patch(
     "/admin/{review_id}",
     response_model=ReviewRead,
-    summary="Change review visibility",
+    summary="Change review visibility (admin)",
     dependencies=[admin_role_checker],
 )
-async def change_review_visibility(
+async def admin_change_review_visibility(
     review_id: UUID,
     data: AdminReviewUpdate,
     db: DbSession,
@@ -141,21 +165,13 @@ async def change_review_visibility(
     )
 
 
-@router.get(
-    "/{review_id}",
-    response_model=ReviewRead,
-    summary="Get review by ID",
-)
-async def get_review(
-    review_id: UUID, db: DbSession, current_user: CurrentUser
-) -> ReviewRead:
-    return await ReviewService.get_review(db, review_id)
-
-
 @router.delete(
-    "/{review_id}", summary="Delete a review", status_code=status.HTTP_204_NO_CONTENT
+    "/admin/{review_id}",
+    summary="Delete any review (admin)",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[admin_role_checker],
 )
-async def delete_review(
+async def admin_delete_review(
     review_id: UUID,
     db: DbSession,
     current_user: CurrentUser,

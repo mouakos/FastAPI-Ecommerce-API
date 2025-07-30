@@ -27,3 +27,9 @@ class TagRead(TagBase):
     updated_at: datetime = Field(
         ..., description="Timestamp when the tag was last updated"
     )
+
+
+class TagReadDetail(TagRead):
+    products: list[UUID] = Field(
+        default_factory=list, description="List of product IDs associated with the tag"
+    )

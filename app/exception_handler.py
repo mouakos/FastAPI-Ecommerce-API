@@ -3,29 +3,17 @@ from fastapi import Request, status, FastAPI
 from fastapi.responses import JSONResponse
 import logging
 
-from app.core.exceptions import (
+from app.exceptions import (
     AccessTokenRequired,
     BaseApiError,
-    CategoryAlreadyExists,
-    CategoryHasProducts,
-    CategoryNotFound,
     InsufficientPermission,
     InsufficientStock,
     InvalidCredentials,
     InvalidPassword,
     InvalidToken,
     PasswordMismatch,
-    ProductAlreadyExists,
-    ProductNotFound,
     RefreshTokenRequired,
-    ReviewAlreadyExists,
-    ReviewNotFound,
     RevokedToken,
-    TagAlreadyExists,
-    TagNotFound,
-    UserAlreadyExists,
-    UserNotFound,
-    CartItemNotFound,
 )
 
 
@@ -39,28 +27,7 @@ def create_exception_handler(
 
 
 def register_all_errors(app: FastAPI):
-    app.add_exception_handler(
-        UserAlreadyExists,
-        create_exception_handler(
-            status_code=status.HTTP_409_CONFLICT,
-            initial_detail={
-                "message": "User with email already exists",
-                "resolution": "Please choose a different email",
-                "error_code": "user_exists",
-            },
-        ),
-    )
-
-    app.add_exception_handler(
-        UserNotFound,
-        create_exception_handler(
-            status_code=status.HTTP_404_NOT_FOUND,
-            initial_detail={
-                "message": "User not found",
-                "error_code": "user_not_found",
-            },
-        ),
-    )
+    
     app.add_exception_handler(
         InvalidCredentials,
         create_exception_handler(
@@ -150,124 +117,7 @@ def register_all_errors(app: FastAPI):
             },
         ),
     )
-    app.add_exception_handler(
-        CategoryNotFound,
-        create_exception_handler(
-            status_code=status.HTTP_404_NOT_FOUND,
-            initial_detail={
-                "message": "Category not found",
-                "resolution": "Please check the category ID",
-                "error_code": "category_not_found",
-            },
-        ),
-    )
-
-    app.add_exception_handler(
-        CategoryAlreadyExists,
-        create_exception_handler(
-            status_code=status.HTTP_409_CONFLICT,
-            initial_detail={
-                "message": "Category with this name already exists",
-                "resolution": "Please choose a different name",
-                "error_code": "category_exists",
-            },
-        ),
-    )
-
-    app.add_exception_handler(
-        ProductNotFound,
-        create_exception_handler(
-            status_code=status.HTTP_404_NOT_FOUND,
-            initial_detail={
-                "message": "Product not found",
-                "resolution": "Please check the product ID",
-                "error_code": "product_not_found",
-            },
-        ),
-    )
-
-    app.add_exception_handler(
-        ProductAlreadyExists,
-        create_exception_handler(
-            status_code=status.HTTP_409_CONFLICT,
-            initial_detail={
-                "message": "Product with the same name or SKU already exists",
-                "resolution": "Please choose a different name or SKU",
-                "error_code": "product_exists",
-            },
-        ),
-    )
-
-    app.add_exception_handler(
-        CategoryHasProducts,
-        create_exception_handler(
-            status_code=status.HTTP_409_CONFLICT,
-            initial_detail={
-                "message": "Category has associated products and cannot be deleted",
-                "resolution": "Please remove products from this category before deleting",
-                "error_code": "category_has_products",
-            },
-        ),
-    )
-
-    app.add_exception_handler(
-        TagNotFound,
-        create_exception_handler(
-            status_code=status.HTTP_404_NOT_FOUND,
-            initial_detail={
-                "message": "Tag not found",
-                "resolution": "Please check the tag ID",
-                "error_code": "tag_not_found",
-            },
-        ),
-    )
-    app.add_exception_handler(
-        TagAlreadyExists,
-        create_exception_handler(
-            status_code=status.HTTP_409_CONFLICT,
-            initial_detail={
-                "message": "Tag with this name already exists",
-                "resolution": "Please choose a different name",
-                "error_code": "tag_exists",
-            },
-        ),
-    )
-
-    app.add_exception_handler(
-        ReviewNotFound,
-        create_exception_handler(
-            status_code=status.HTTP_404_NOT_FOUND,
-            initial_detail={
-                "message": "Review not found",
-                "resolution": "Please check the review ID",
-                "error_code": "review_not_found",
-            },
-        ),
-    )
-
-    app.add_exception_handler(
-        ReviewAlreadyExists,
-        create_exception_handler(
-            status_code=status.HTTP_409_CONFLICT,
-            initial_detail={
-                "message": "Review for this product by this user already exists",
-                "resolution": "Please update your existing review instead",
-                "error_code": "review_exists",
-            },
-        ),
-    )
-    app.add_exception_handler(
-        CartItemNotFound,
-        create_exception_handler(
-            status_code=status.HTTP_404_NOT_FOUND,
-            initial_detail={
-                "message": "Cart item not found",
-                "resolution": "Please check the cart item ID",
-                "error_code": "cart_item_not_found",
-            },
-        ),
-    )
-
+    
     app.add_exception_handler(
         InsufficientStock,
         create_exception_handler(

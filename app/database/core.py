@@ -10,7 +10,7 @@ from faker import Faker
 
 from app.users.schemas import UserRole
 from app.models import *  # noqa: F403
-from app.core.config import settings
+from app.config import settings
 from app.models.user import Gender, User
 
 fake = Faker()

@@ -16,12 +16,7 @@ from app.products.schemas import (
     ProductReadDetail,
     ProductUpdate,
 )
-from app.core.exceptions import (
-    ProductAlreadyExists,
-    ProductNotFound,
-    CategoryNotFound,
-    TagNotFound,
-)
+from app.exceptions import NotFoundError, ConflictError
 from app.reviews.schemas import ReviewRead
 from app.tags.schemas import TagRead
 from app.utils.paginate import PaginatedResponse
@@ -89,13 +84,12 @@ class ProductService:
         Args:
             db_session (AsyncSession): The database session.
             data (ProductCreate): Data to create the product.
+        Raises:
+            ConflictError: If a product with the same name or SKU already exists.
+            NotFoundError: If the category or tags do not exist.
 
         Returns:
             ProductRead: The created product.
-
-        Raises:
-            ProductAlreadyExists: If a product with the same SKU already exists.
-            CategoryNotFound: If the category does not exist.
         """
         async with db_session.begin():
             # Check for existing name/sku
@@ -108,12 +102,14 @@ class ProductService:
                 )
             )
             if exists.first():
-                raise ProductAlreadyExists()
+                raise ConflictError(
+                    f"Product with name {data.name} or SKU {data.sku} already exists."
+                )
 
             # Check category
             category = await db_session.get(Category, data.category_id)
             if not category:
-                raise CategoryNotFound()
+                raise NotFoundError(f"Category with ID {data.category_id} not found.")
 
             # Check tags
             tags = []
@@ -122,7 +118,7 @@ class ProductService:
                     await db_session.exec(select(Tag).where(Tag.id.in_(data.tag_ids)))
                 ).all()
                 if len(tags) != len(set(data.tag_ids)):
-                    raise TagNotFound()
+                    raise NotFoundError("One or more tags not found.")
 
             product = Product(
                 **data.model_dump(exclude={"tag_ids"}),
@@ -144,15 +140,16 @@ class ProductService:
             db_session (AsyncSession): The database session.
             product_id (UUID): The ID of the product.
 
+        Raises:
+            NotFoundError: If the product does not exist.
+
         Returns:
             ProductReadDetail: The product details.
-
-        Raises:
-            ProductNotFound: If the product does not exist.
         """
         product = await db_session.get(Product, product_id)
         if not product:
-            raise ProductNotFound()
+            raise NotFoundError(f"Product with ID {product_id} not found.")
+        
         category_read = (
             CategoryRead(**product.category.model_dump()) if product.category else None
         )
@@ -184,21 +181,19 @@ class ProductService:
             product_id (UUID): The ID of the product to update.
             data (ProductUpdate): Fields to update.
 
+        Raises:
+            NotFoundError: If the product, category, or tags do not exist.
+            ConflictError: If a product with the same name or SKU already exists.
         Returns:
             ProductRead: The updated product.
-
-        Raises:
-            ProductNotFound: If the product does not exist.
-            ProductAlreadyExists: If a product with the same SKU already exists.
-            CategoryNotFound: If the category does not exist.
         """
 
         if data.category_id and not await db_session.get(Category, data.category_id):
-            raise CategoryNotFound()
+            raise NotFoundError(f"Category with ID {data.category_id} not found.")
 
         product = await db_session.get(Product, product_id)
         if not product:
-            raise ProductNotFound()
+            raise NotFoundError(f"Product with ID {product_id} not found.")
 
         if data.name and data.name.lower() != product.name.lower():
             name_exists = await db_session.exec(
@@ -208,7 +203,7 @@ class ProductService:
                 )
             )
             if name_exists.first():
-                raise ProductAlreadyExists()
+                raise ConflictError(f"Product with name {data.name} already exists.")
             product.slug = slugify(product.name)
 
         if data.sku and data.sku.lower() != product.sku.lower():
@@ -219,7 +214,7 @@ class ProductService:
                 )
             )
             if sku_exists.first():
-                raise ProductAlreadyExists()
+                raise ConflictError(f"Product with SKU {data.sku} already exists.")
 
         for key, value in data.model_dump(
             exclude_unset=True, exclude={"tag_ids"}
@@ -231,7 +226,7 @@ class ProductService:
                 await db_session.exec(select(Tag).where(Tag.id.in_(data.tag_ids)))
             ).all()
             if len(tags) != len(set(data.tag_ids)):
-                raise TagNotFound()
+                raise NotFoundError("One or more tags not found.")
             product.tags = tags
 
         # TODO - Check if fields are actually changed
@@ -250,10 +245,10 @@ class ProductService:
             product_id (UUID): The ID of the product to delete.
 
         Raises:
-            ProductNotFound: If the product does not exist.
+            NotFoundError: If the product does not exist.
         """
         async with db_session.begin():
             product = await db_session.get(Product, product_id)
             if not product:
-                raise ProductNotFound()
+                raise NotFoundError(f"Product with ID {product_id} not found.")
             await db_session.delete(product)

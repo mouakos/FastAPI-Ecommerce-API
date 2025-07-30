@@ -4,6 +4,11 @@ from pydantic import BaseModel, EmailStr, Field
 from enum import Enum
 from uuid import UUID
 
+from app.addresses.schemas import AddressRead
+from app.orders.schemas import OrderRead
+from app.reviews.schemas import ReviewRead
+from app.wishlist.schemas import WishlistRead
+
 
 class Gender(str, Enum):
     male = "male"
@@ -43,13 +48,24 @@ class UserRead(UserBase):
     is_active: bool = Field(
         default=True, description="Indicates if the user account is active"
     )
-    created_at: datetime = Field(
-        ...,
-        description="Timestamp when the user was created",
-    )
+    created_at: datetime = Field(..., description="Timestamp when the user was created")
     updated_at: datetime = Field(
-        ...,
-        description="Timestamp when the user was last updated",
+        ..., description="Timestamp when the user was last updated"
+    )
+
+
+class UserReadDetail(UserRead):
+    addresses: Optional[list[AddressRead]] = Field(
+        default_factory=list, description="List of addresses associated with the user"
+    )
+    orders: Optional[list[OrderRead]] = Field(
+        default_factory=list, description="List of orders associated with the user"
+    )
+    reviews: Optional[list[ReviewRead]] = Field(
+        default_factory=list, description="List of reviews associated with the user"
+    )
+    wishlist: Optional["WishlistRead"] = Field(
+        default=None, description="Wishlist associated with the user"
     )
 
 
@@ -73,17 +89,6 @@ class AdminUserUpdate(UserUpdate):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
-
-
-class TokenResponse(BaseModel):
-    access_token: str = Field(..., description="JWT access token")
-    refresh_token: Optional[str] = Field(
-        None, description="JWT refresh token, if applicable"
-    )
-    token_type: str = Field(default="Bearer", description="Type of the token")
-    access_token_expires_in: int = Field(
-        default=3600, description="Access token expiration time in seconds"
-    )
 
 
 class PasswordUpdate(BaseModel):

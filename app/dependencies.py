@@ -6,11 +6,11 @@ from typing_extensions import Annotated
 from fastapi import Request
 from fastapi.security import HTTPBearer
 from sqlmodel.ext.asyncio.session import AsyncSession
-from app.core.security import decode_access_token, token_blocklist
+from app.utils.security import decode_access_token, token_blocklist
 from app.database.core import get_session
 from app.users.service import UserService
 from app.users.schemas import UserRead, UserRole
-from app.core.exceptions import (
+from app.exceptions import (
     AccessTokenRequired,
     InsufficientPermission,
     InvalidToken,

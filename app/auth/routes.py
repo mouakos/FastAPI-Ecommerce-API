@@ -1,12 +1,11 @@
-from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, status
 
-from app.api.dependencies import AccessTokenBearer, DbSession, RefreshTokenBearer
+from app.dependencies import AccessTokenBearer, DbSession, RefreshTokenBearer
 from app.users.schemas import UserRead, UserCreate
 from app.users.service import UserService
-from app.users.schemas import UserLogin, TokenResponse
-from app.core.security import token_blocklist
+from app.users.schemas import UserLogin
+from app.utils.security import token_blocklist, refresh_access_token, TokenResponse
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
@@ -36,16 +35,12 @@ async def login(
 async def refresh_token(
     token_data: dict = Depends(refresh_token_bearer),
 ) -> TokenResponse:
-    return await UserService.refresh_token(token_data)
+    return await refresh_access_token(token_data)
 
 
-@router.get("/logout", summary="Logout User")
+@router.get("/logout", summary="Logout User", status_code=status.HTTP_204_NO_CONTENT)
 async def revoke_token(
     token_data: dict = Depends(access_token_bearer),
-) -> JSONResponse:
+) -> None:
     jti = token_data.get("jti")
     token_blocklist.add(jti)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"message": "logout successfully"},
-    )

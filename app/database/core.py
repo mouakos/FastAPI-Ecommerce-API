@@ -17,7 +17,7 @@ fake = Faker()
 
 async_engine = create_async_engine(settings.DATABASE_URL, echo=True)
 
-async_session = sessionmaker(
+local_session = sessionmaker(
     bind=async_engine,
     class_=AsyncSession,
     expire_on_commit=False,
@@ -35,17 +35,14 @@ async def init_db():
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Get a session for database operations."""
 
-    async_session = sessionmaker(
-        bind=async_engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-    )
+    async_session = local_session
     async with async_session() as session:
         yield session
 
 
 async def create_admin():
     """Create an admin user if it does not already exist."""
+    async_session = local_session
     async with async_session() as session:
         # Check if any admin exists
         existing = await session.exec(select(User).where(User.role == UserRole.admin))
@@ -64,6 +61,7 @@ async def create_admin():
 
 
 fake = Faker()
+
 
 async def seed_users(count: int = 50):
     async with AsyncSession(async_engine) as session:

@@ -1,23 +1,30 @@
 from fastapi import APIRouter, Depends, status
 from uuid import UUID
-from typing import List
+from typing import Annotated
 
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.auth.schemas import TokenData
 from app.carts.schemas import CartItemCreate, CartItemRead, CartItemUpdate, CartRead
 from app.carts.service import CartService
-from app.dependencies import DbSession, CurrentUser, RoleChecker
+from app.auth.dependencies import AccessTokenBearer, RoleChecker
+from app.database.core import get_session
 from app.users.schemas import UserRole
 
 router = APIRouter(prefix="/api/v1/cart", tags=["Carts"])
 role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 
+DbSession = Annotated[AsyncSession, Depends(get_session)]
+AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
+
 
 # User endpoints
-@router.get("/", response_model=List[CartRead], summary="Get my cart")
+@router.get("/", response_model=list[CartRead], summary="Get my cart")
 async def get_my_cart(
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
-    return await CartService.get_cart(db, current_user.id)
+    return await CartService.get_cart(db, UUID(token_data.sub))
 
 
 @router.post(
@@ -29,9 +36,9 @@ async def get_my_cart(
 async def add_item(
     data: CartItemCreate,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
-    return await CartService.add_item(db, current_user.id, data)
+    return await CartService.add_item(db, UUID(token_data.sub), data)
 
 
 @router.patch(
@@ -43,9 +50,9 @@ async def update_item(
     item_id: UUID,
     data: CartItemUpdate,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
-    return await CartService.update_item(db, current_user.id, item_id, data)
+    return await CartService.update_item(db, UUID(token_data.sub), item_id, data)
 
 
 @router.delete(
@@ -56,9 +63,9 @@ async def update_item(
 async def remove_item(
     item_id: UUID,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
-    await CartService.remove_item(db, current_user.id, item_id)
+    await CartService.remove_item(db, UUID(token_data.sub), item_id)
 
 
 @router.delete(
@@ -68,15 +75,15 @@ async def remove_item(
 )
 async def clear_cart(
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
-    await CartService.clear_cart(db, current_user.id)
+    await CartService.clear_cart(db, UUID(token_data.sub))
 
 
 # Admin endpoints
 @router.get(
     "/admin/{user_id}",
-    response_model=List[CartRead],
+    response_model=list[CartRead],
     dependencies=[role_checker_admin],
     summary="Get cart for a specific user (admin only)",
 )

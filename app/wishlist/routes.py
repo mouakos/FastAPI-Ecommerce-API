@@ -1,18 +1,25 @@
+from typing import Annotated
 from fastapi import APIRouter, status, Depends
 from uuid import UUID
-from app.dependencies import DbSession, CurrentUser, RoleChecker
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.auth.dependencies import AccessTokenBearer, RoleChecker
+from app.auth.schemas import TokenData
 from app.wishlist.service import WishlistService
 from app.wishlist.schemas import WishlistRead, WishlistItemCreate, WishlistItemRead
 from app.users.schemas import UserRole
+from app.database.core import get_session
 
 router = APIRouter(prefix="/api/v1/wishlists", tags=["Wishlists"])
-role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 
+role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+DbSession = Annotated[AsyncSession, Depends(get_session)]
+AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
 
 # User endpoints
 @router.get("/", response_model=WishlistRead, summary="Get current user's wishlist")
-async def get_my_wishlist(db: DbSession, current_user: CurrentUser) -> WishlistRead:
-    return await WishlistService.get_wishlist(db, current_user.id)
+async def get_my_wishlist(db: DbSession, token_data: AccessToken) -> WishlistRead:
+    return await WishlistService.get_wishlist(db, UUID(token_data.sub))
 
 
 @router.post(
@@ -24,9 +31,9 @@ async def get_my_wishlist(db: DbSession, current_user: CurrentUser) -> WishlistR
 async def add_item_to_my_wishlist(
     data: WishlistItemCreate,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ) -> WishlistItemRead:
-    return await WishlistService.add_item(db, current_user.id, data)
+    return await WishlistService.add_item(db, UUID(token_data.sub), data)
 
 
 @router.delete(
@@ -37,9 +44,9 @@ async def add_item_to_my_wishlist(
 async def remove_item_from_my_wishlist(
     product_id: UUID,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
-    await WishlistService.remove_item(db, current_user.id, product_id)
+    await WishlistService.remove_item(db, UUID(token_data.sub), product_id)
 
 
 @router.delete(
@@ -47,8 +54,8 @@ async def remove_item_from_my_wishlist(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Clear current user's wishlist",
 )
-async def clear_my_wishlist(db: DbSession, current_user: CurrentUser):
-    await WishlistService.clear_wishlist(db, current_user.id)
+async def clear_my_wishlist(db: DbSession, token_data: AccessToken):
+    await WishlistService.clear_wishlist(db, UUID(token_data.sub))
 
 
 # Admin endpoints

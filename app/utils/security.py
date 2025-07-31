@@ -5,27 +5,12 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 
-from pydantic import BaseModel, Field
-
-from app.exceptions import InvalidTokenError
-
-from ..config import settings
+from app.config import settings
 
 passwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # TODO -- This should be replaced with a proper database or cache in production (e.g., Redis)
 token_blocklist = set()
-
-
-class TokenResponse(BaseModel):
-    access_token: str = Field(..., description="JWT access token")
-    refresh_token: Optional[str] = Field(
-        None, description="JWT refresh token, if applicable"
-    )
-    token_type: str = Field(default="Bearer", description="Type of the token")
-    access_token_expires_in: int = Field(
-        ..., description="Access token expiration time in seconds"
-    )
 
 
 def generate_password_hash(password: str) -> str:
@@ -55,7 +40,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 
 def create_token(
-    user_id: str, expires_delta: timedelta = None, refresh: bool = False
+    user_id: str, user_role: str, expires_delta: timedelta = None, refresh: bool = False
 ) -> str:
     """Create a token with optional expiration.
 
@@ -67,7 +52,12 @@ def create_token(
     Returns:
         str: The encoded token.
     """
-    payload = {"sub": user_id, "jti": str(uuid4()), "refresh": refresh}
+    payload = {
+        "sub": user_id,
+        "role": user_role,
+        "jti": str(uuid4()),
+        "refresh": refresh,
+    }
     payload["exp"] = datetime.now() + (
         expires_delta or timedelta(seconds=settings.JWT_ACCESS_TOKEN_EXPIRE_SECONDS)
     )
@@ -94,25 +84,3 @@ def decode_access_token(token: str) -> Optional[dict]:
     except JWTError as e:
         logging.error(f"Token decoding failed: {e}")
         return None
-
-
-async def refresh_access_token(token_data: dict) -> TokenResponse:
-    """Refresh the access token if it is still valid.
-
-    Args:
-        token_data (dict): Data containing the token information.
-
-    Raises:
-        InvalidTokenError: If the token is invalid or expired.
-
-    Returns:
-        TokenResponse: The response containing the new access token and its expiration time.
-    """
-    expiry_timestamp = token_data.get("exp")
-    if datetime.fromtimestamp(expiry_timestamp) > datetime.now():
-        new_access_token = create_token(token_data.get("sub"))
-        return TokenResponse(
-            access_token=new_access_token,
-            access_token_expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_SECONDS,
-        )
-    return InvalidTokenError()

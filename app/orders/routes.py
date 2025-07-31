@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List
+from typing import Annotated, List
 from uuid import UUID
+from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.dependencies import DbSession, CurrentUser, RoleChecker
+from app.auth.dependencies import AccessTokenBearer, RoleChecker
+from app.auth.schemas import TokenData
+from app.database.core import get_session
 from app.orders.schemas import OrderRead, OrderStatusUpdate
 from app.orders.service import OrderService
 from app.users.schemas import UserRole
@@ -10,6 +13,9 @@ from app.users.schemas import UserRole
 router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
 
 role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+
+DbSession = Annotated[AsyncSession, Depends(get_session)]
+AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
 
 
 # User endpoints
@@ -21,9 +27,9 @@ role_checker_admin = Depends(RoleChecker([UserRole.admin]))
 )
 async def create_order(
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
-    return await OrderService.create_order(db, current_user.id)
+    return await OrderService.create_order(db, UUID(token_data.sub))
 
 
 @router.get(
@@ -33,9 +39,9 @@ async def create_order(
 )
 async def list_my_orders(
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
-    return await OrderService.list_orders_by_user(db, current_user.id)
+    return await OrderService.list_orders_by_user(db, UUID(token_data.sub))
 
 
 @router.get(
@@ -46,10 +52,10 @@ async def list_my_orders(
 async def get_my_order_by_id(
     order_id: UUID,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
     order = await OrderService.get_order_by_id(db, order_id)
-    if not order or order.user_id != current_user.id:
+    if not order or order.user_id != UUID(token_data.sub):
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 

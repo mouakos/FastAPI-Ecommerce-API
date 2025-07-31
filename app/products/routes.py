@@ -1,6 +1,8 @@
-from typing import Optional
+from typing import Optional, Annotated
 from fastapi import APIRouter, Depends, Query, status
 from uuid import UUID
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 from app.products.schemas import (
     ProductCreate,
     ProductRead,
@@ -8,13 +10,16 @@ from app.products.schemas import (
     ProductUpdate,
 )
 from app.products.service import ProductService
-from app.dependencies import DbSession, RoleChecker
+from app.auth.dependencies import RoleChecker
 from app.users.schemas import UserRole
 from app.utils.paginate import PaginatedResponse
+from app.database.core import get_session
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
 role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+
+DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
 # User endpoints

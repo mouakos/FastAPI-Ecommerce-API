@@ -1,8 +1,10 @@
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
+from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.dependencies import DbSession, RoleChecker
+from app.auth.dependencies import RoleChecker
+from app.database.core import get_session
 from app.users.schemas import (
     AdminUserUpdate,
     UserRead,
@@ -15,6 +17,8 @@ from app.utils.paginate import PaginatedResponse
 router = APIRouter(prefix="/api/v1/users", tags=["Users"])
 
 role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+
+DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
 @router.get(

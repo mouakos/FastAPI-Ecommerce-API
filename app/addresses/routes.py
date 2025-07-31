@@ -1,14 +1,21 @@
 from fastapi import APIRouter, status, Depends
-from typing import List
+from typing import Annotated, List
 from uuid import UUID
 
-from app.dependencies import DbSession, CurrentUser, RoleChecker
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.auth.dependencies import AccessTokenBearer, RoleChecker
 from app.addresses.schemas import AddressCreate, AddressUpdate, AddressRead
 from app.addresses.service import AddressService
+from app.auth.schemas import TokenData
 from app.users.schemas import UserRole
 from app.exceptions import AuthorizationError
+from app.database.core import get_session
 
 router = APIRouter(prefix="/api/v1/addresses", tags=["Addresses"])
+
+DbSession = Annotated[AsyncSession, Depends(get_session)]
+AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
 
 
 # User endpoints
@@ -21,9 +28,9 @@ router = APIRouter(prefix="/api/v1/addresses", tags=["Addresses"])
 async def add_new_address(
     data: AddressCreate,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
-    return await AddressService.create_address(db, current_user.id, data)
+    return await AddressService.create_address(db, UUID(token_data.sub), data)
 
 
 @router.get(
@@ -33,9 +40,9 @@ async def add_new_address(
 )
 async def list_my_addresses(
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
-    return await AddressService.list_addresses_by_user(db, current_user.id)
+    return await AddressService.list_addresses_by_user(db, UUID(token_data.sub))
 
 
 @router.get(
@@ -46,10 +53,10 @@ async def list_my_addresses(
 async def get_my_address(
     address_id: UUID,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
     address = await AddressService.get_address(db, address_id)
-    if address.user_id != current_user.id:
+    if address.user_id != UUID(token_data.sub):
         raise AuthorizationError("Not authorized to access this address.")
     return address
 
@@ -63,10 +70,10 @@ async def update_my_address(
     address_id: UUID,
     data: AddressUpdate,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
     address = await AddressService.get_address(db, address_id)
-    if address.user_id != current_user.id:
+    if address.user_id != UUID(token_data.sub):
         raise AuthorizationError("Not authorized to update this address.")
     return await AddressService.update_address(db, address_id, data)
 
@@ -79,10 +86,10 @@ async def update_my_address(
 async def delete_my_address(
     address_id: UUID,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ):
     address = await AddressService.get_address(db, address_id)
-    if address.user_id != current_user.id:
+    if address.user_id != UUID(token_data.sub):
         raise AuthorizationError("Not authorized to delete this address.")
     await AddressService.delete_address(db, address_id)
 

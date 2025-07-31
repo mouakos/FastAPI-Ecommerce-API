@@ -1,6 +1,9 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
-from typing import Optional
+from typing import Optional, Annotated
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+
 
 from app.reviews.schemas import (
     AdminReviewUpdate,
@@ -8,15 +11,19 @@ from app.reviews.schemas import (
     ReviewRead,
     ReviewUpdate,
 )
+from app.auth.schemas import TokenData
 from app.reviews.service import ReviewService
-from app.dependencies import DbSession, CurrentUser, RoleChecker
+from app.auth.dependencies import  RoleChecker, AccessTokenBearer
 from app.users.schemas import UserRole
 from app.utils.paginate import PaginatedResponse
+from app.database.core import get_session
 
 
 router = APIRouter(prefix="/api/v1/reviews", tags=["Reviews"])
 admin_role_checker = Depends(RoleChecker([UserRole.admin]))
 
+DbSession = Annotated[AsyncSession, Depends(get_session)]
+AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
 
 # User endpoints
 @router.get(
@@ -65,9 +72,9 @@ async def create_review(
     product_id: UUID,
     data: ReviewCreate,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ) -> ReviewRead:
-    return await ReviewService.create_review(db, data, current_user.id, product_id)
+    return await ReviewService.create_review(db, data, UUID(token_data.sub), product_id)
 
 
 @router.patch(
@@ -79,9 +86,9 @@ async def update_review(
     review_id: UUID,
     data: ReviewUpdate,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ) -> ReviewRead:
-    return await ReviewService.update_review(db, review_id, current_user.id, data)
+    return await ReviewService.update_review(db, review_id, UUID(token_data.sub), data)
 
 
 @router.get(
@@ -90,7 +97,7 @@ async def update_review(
     summary="Get review by ID",
 )
 async def get_review(
-    review_id: UUID, db: DbSession, current_user: CurrentUser
+    review_id: UUID, db: DbSession, token_data: AccessToken
 ) -> ReviewRead:
     return await ReviewService.get_review(db, review_id)
 
@@ -101,9 +108,9 @@ async def get_review(
 async def delete_review(
     review_id: UUID,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ) -> None:
-    await ReviewService.delete_review(db, review_id, current_user.id)
+    await ReviewService.delete_review(db, review_id, UUID(token_data.sub))
 
 
 # Admin endpoints
@@ -158,10 +165,10 @@ async def admin_change_review_visibility(
     review_id: UUID,
     data: AdminReviewUpdate,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ) -> ReviewRead:
     return await ReviewService.change_review_visibility(
-        db, review_id, current_user.id, data
+        db, review_id, UUID(token_data.sub), data
     )
 
 
@@ -174,6 +181,6 @@ async def admin_change_review_visibility(
 async def admin_delete_review(
     review_id: UUID,
     db: DbSession,
-    current_user: CurrentUser,
+    token_data: AccessToken,
 ) -> None:
-    await ReviewService.delete_review(db, review_id, current_user.id)
+    await ReviewService.delete_review(db, review_id, UUID(token_data.sub))

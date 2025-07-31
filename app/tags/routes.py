@@ -1,15 +1,19 @@
-from typing import Optional
+from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, status, Query, HTTPException
 from uuid import UUID
+from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.dependencies import DbSession, RoleChecker
+from app.auth.dependencies import RoleChecker
 from app.tags.schemas import TagCreate, TagRead, TagReadDetail, TagUpdate
 from app.tags.service import TagService
 from app.users.schemas import UserRole
 from app.utils.paginate import PaginatedResponse
+from app.database.core import get_session
 
 router = APIRouter(prefix="/api/v1/tags", tags=["Tags"])
 role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+
+DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
 # User endpoints

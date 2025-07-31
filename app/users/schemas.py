@@ -86,10 +86,6 @@ class AdminUserUpdate(UserUpdate):
     )
 
 
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
-
 
 class PasswordUpdate(BaseModel):
     current_password: str = Field(..., description="Current password of the user")

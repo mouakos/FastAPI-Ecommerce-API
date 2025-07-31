@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from app.api import api_router
 from app.database.core import init_db
 from app.logging import LogLevel, setup_logging
-from app.exception_handler import register_all_errors
 
 setup_logging(LogLevel.info)
 
@@ -42,8 +41,6 @@ app = FastAPI(
     },
 )
 
-# Register exception handlers
-register_all_errors(app)
 
 # Register API routes
 app.include_router(api_router)

@@ -1,14 +1,18 @@
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
+
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 
 from app.categories.schemas import (
     CategoryCreate,
     CategoryRead,
     CategoryUpdate,
 )
-from app.dependencies import DbSession, RoleChecker
+from app.auth.dependencies import RoleChecker
 from app.categories.service import CategoryService
+from app.database.core import get_session
 from app.users.schemas import UserRole
 from app.utils.paginate import PaginatedResponse
 
@@ -16,6 +20,8 @@ from app.utils.paginate import PaginatedResponse
 router = APIRouter(prefix="/api/v1/categories", tags=["Categories"])
 
 role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+
+DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
 # User endpoints

@@ -1,6 +1,6 @@
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select
+from sqlmodel import select, desc, update
 
 from ...exceptions import NotFoundError
 from ...models.address import Address
@@ -19,18 +19,21 @@ class AddressService:
             user_id (UUID): The ID of the user to create the address for.
             data (AddressCreate): The data for the new address.
         Raises:
-            NotFoundError: If an address with the same details already exists for the user.
+            NotFoundError: If the user does not exist.
         Returns:
             AddressRead: The created address.
         """
+        user = await db.get(Address, user_id)
+        if not user:
+            raise NotFoundError(f"User with ID {user_id} not found")
 
         if data.is_default_shipping:
-            await AddressService._unset_default_shipping(db, user_id)
+            await AddressService._unset_default_flag(db, user_id, "is_default_shipping")
 
         if data.is_default_billing:
-            await AddressService._unset_default_billing(db, user_id)
+            await AddressService._unset_default_flag(db, user_id, "is_default_billing")
 
-        address = Address(**data.model_dump())
+        address = Address(**data.model_dump(), user_id=user_id)
         db.add(address)
         await db.commit()
         return address
@@ -70,7 +73,7 @@ class AddressService:
         result = await db.exec(
             select(Address)
             .where(Address.user_id == user_id)
-            .order_by(Address.created_at.desc())
+            .order_by(desc(Address.created_at))
         )
         return result.all()
 
@@ -98,13 +101,20 @@ class AddressService:
         update_data = data.model_dump(exclude_unset=True)
 
         if data.is_default_shipping:
-            await AddressService._unset_default_shipping(db, address.user_id)
+            await AddressService._unset_default_flag(
+                db, address.user_id, "is_default_shipping"
+            )
 
         if data.is_default_billing:
-            await AddressService._unset_default_billing(db, address.user_id)
+            await AddressService._unset_default_flag(
+                db, address.user_id, "is_default_billing"
+            )
 
         for key, value in update_data.items():
             setattr(address, key, value)
+
+        # TODO: Update UpdatedAt field of the address
+
         await db.commit()
         return address
 
@@ -123,21 +133,15 @@ class AddressService:
         address = await db.get(Address, address_id)
         if not address:
             raise NotFoundError(f"Address with ID {address_id} not found")
+
         await db.delete(address)
         await db.commit()
 
     @staticmethod
-    async def _unset_default_billing(db, user_id: UUID):
+    async def _unset_default_flag(db: AsyncSession, user_id: UUID, flag_field: str):
         await db.exec(
-            select(Address)
+            update(Address)
             .where(Address.user_id == user_id)
-            .values(is_default_billing=False)
+            .values({flag_field: False})
         )
-
-    @staticmethod
-    async def _unset_default_shipping(db, user_id: UUID):
-        await db.exec(
-            select(Address)
-            .where(Address.user_id == user_id)
-            .values(is_default_shipping=False)
-        )
+        

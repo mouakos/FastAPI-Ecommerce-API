@@ -16,12 +16,7 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
 # User endpoints
-@router.post(
-    "/",
-    response_model=AddressRead,
-    status_code=status.HTTP_201_CREATED,
-    summary="Add new address for current user",
-)
+@router.post("/", response_model=AddressRead, status_code=status.HTTP_201_CREATED)
 async def add_new_address(
     data: AddressCreate,
     db: DbSession,
@@ -30,11 +25,7 @@ async def add_new_address(
     return await AddressService.create_address(db, UUID(token_data.sub), data)
 
 
-@router.get(
-    "/me",
-    response_model=List[AddressRead],
-    summary="List current user's addresses",
-)
+@router.get("/me", response_model=List[AddressRead])
 async def list_my_addresses(
     db: DbSession,
     token_data: AccessToken,
@@ -42,11 +33,7 @@ async def list_my_addresses(
     return await AddressService.list_addresses_by_user(db, UUID(token_data.sub))
 
 
-@router.get(
-    "/me/{address_id}",
-    response_model=AddressRead,
-    summary="Get current user's address by ID",
-)
+@router.get("/me/{address_id}", response_model=AddressRead)
 async def get_my_address(
     address_id: UUID,
     db: DbSession,
@@ -58,11 +45,7 @@ async def get_my_address(
     return address
 
 
-@router.patch(
-    "/me/{address_id}",
-    response_model=AddressRead,
-    summary="Update current user's address by ID",
-)
+@router.patch("/me/{address_id}", response_model=AddressRead)
 async def update_my_address(
     address_id: UUID,
     data: AddressUpdate,
@@ -75,11 +58,7 @@ async def update_my_address(
     return await AddressService.update_address(db, address_id, data)
 
 
-@router.delete(
-    "/me/{address_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Delete current user's address by ID",
-)
+@router.delete("/me/{address_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_my_address(
     address_id: UUID,
     db: DbSession,
@@ -96,9 +75,8 @@ role_checker_admin = Depends(RoleChecker(["admin"]))
 
 
 @router.get(
-    "/user/{user_id}",
+    "/users/{user_id}",
     response_model=List[AddressRead],
-    summary="List addresses by user (admin)",
     dependencies=[role_checker_admin],
 )
 async def list_addresses_by_user(
@@ -109,10 +87,7 @@ async def list_addresses_by_user(
 
 
 @router.get(
-    "/{address_id}",
-    response_model=AddressRead,
-    summary="Get address by ID (admin)",
-    dependencies=[role_checker_admin],
+    "/{address_id}", response_model=AddressRead, dependencies=[role_checker_admin]
 )
 async def get_address(
     address_id: UUID,
@@ -122,10 +97,7 @@ async def get_address(
 
 
 @router.patch(
-    "/{address_id}",
-    response_model=AddressRead,
-    summary="Update address (admin)",
-    dependencies=[role_checker_admin],
+    "/{address_id}", response_model=AddressRead, dependencies=[role_checker_admin]
 )
 async def update_address(
     address_id: UUID,
@@ -138,7 +110,6 @@ async def update_address(
 @router.delete(
     "/{address_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Delete address (admin)",
     dependencies=[role_checker_admin],
 )
 async def delete_address(

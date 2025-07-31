@@ -13,7 +13,7 @@ passwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 token_blocklist = set()
 
 
-def generate_password_hash(password: str) -> str:
+def get_password_hash(password: str) -> str:
     """Generate a hashed password using bcrypt.
 
     Args:

@@ -8,7 +8,7 @@ from ...utils.security import token_blocklist
 from ...database.core import get_session
 from ..users.schemas import UserRead, UserCreate
 from .service import AuthService
-from .dependencies import AccessTokenBearer, RefreshTokenBearer
+from .dependencies import AccessToken, RefreshTokenBearer
 from .schemas import TokenData, UserLogin, TokenResponse
 
 
@@ -16,20 +16,18 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
 refresh_token_bearer = RefreshTokenBearer()
 DbSession = Annotated[AsyncSession, Depends(get_session)]
-AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
 
 
 @router.post(
     "/signup",
     response_model=UserRead,
-    summary="Signup",
     status_code=status.HTTP_201_CREATED,
 )
 async def signup(db_session: DbSession, user_create: UserCreate) -> UserRead:
     return await AuthService.register_user(db_session, user_create)
 
 
-@router.post("/login", response_model=TokenResponse, summary="Login")
+@router.post("/login", response_model=TokenResponse)
 async def login(
     db_session: DbSession, form_data: OAuth2PasswordRequestForm = Depends()
 ) -> TokenResponse:
@@ -37,15 +35,15 @@ async def login(
     return await AuthService.login(db_session, login_data)
 
 
-@router.get("/refresh", response_model=TokenResponse, summary="Refresh Access Token")
-async def refresh_token(
+@router.get("/refresh", response_model=TokenResponse)
+async def refresh_access_token(
     token_data: TokenData = Depends(refresh_token_bearer),
 ) -> TokenResponse:
     return await AuthService.refresh_token(token_data)
 
 
-@router.get("/logout", summary="Logout", status_code=status.HTTP_204_NO_CONTENT)
-async def revoke_token(
+@router.get("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
     token_data: AccessToken,
 ) -> None:
     jti = token_data.jti

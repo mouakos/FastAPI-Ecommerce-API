@@ -14,17 +14,6 @@ if TYPE_CHECKING:
     from app.models.wishlist import Wishlist
 
 
-class Gender(str, Enum):
-    male = "male"
-    female = "female"
-    other = "other"
-
-
-class UserRole(str, Enum):
-    customer = "customer"
-    admin = "admin"
-
-
 class User(SQLModel, table=True):
     __tablename__ = "users"
 
@@ -32,10 +21,10 @@ class User(SQLModel, table=True):
     email: str = Field(index=True, nullable=False, unique=True)
     password_hash: str = Field(nullable=False, exclude=True)
     full_name: str = Field(nullable=False)
-    gender: Gender = Field(nullable=False)
+    gender: Optional[str] = Field(default="other", nullable=True)
     date_of_birth: Optional[date] = Field(default=None, nullable=True)
     phone_number: Optional[str] = Field(default=None, nullable=True)
-    role: UserRole = Field(default=UserRole.customer, nullable=False)
+    role: Optional[str] = Field(default="customer", nullable=False)
     is_active: bool = Field(default=True, nullable=False)
 
     created_at: datetime = Field(default_factory=get_utc_now, nullable=False)
@@ -58,6 +47,6 @@ class User(SQLModel, table=True):
     orders: list["Order"] = Relationship(
         back_populates="user", sa_relationship_kwargs={"lazy": "selectin"}
     )
-    
+
     # Relationship with wishlist - one-to-one
     wishlist: Optional["Wishlist"] = Relationship(back_populates="user")

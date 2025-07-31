@@ -3,14 +3,11 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from datetime import datetime
 
-from app.carts.schemas import CartItemCreate, CartItemRead, CartItemUpdate, CartRead
-from app.exceptions import (
-    InsufficientStock,
-    NotFoundError,
-)
-from app.models.cart import Cart, CartItem
-from app.models.product import Product
-from app.models.user import User
+from ...exceptions import ConflictError, NotFoundError
+from ...models.cart import Cart, CartItem
+from ...models.product import Product
+from ...models.user import User
+from .schemas import CartItemCreate, CartItemRead, CartItemUpdate, CartRead
 
 
 class CartService:
@@ -57,7 +54,7 @@ class CartService:
             raise NotFoundError(f"Product with ID {data.product_id} not found")
 
         if data.quantity > product.stock:
-            raise InsufficientStock()
+            raise ConflictError("Requested quantity exceeds available stock")
 
         stmt = select(CartItem).where(
             CartItem.cart_id == cart.id, CartItem.product_id == data.product_id
@@ -112,7 +109,7 @@ class CartService:
             raise NotFoundError(f"Cart item with ID {item_id} not found")
 
         if data.quantity > item.product.stock:
-            raise InsufficientStock()
+            raise ConflictError("Requested quantity exceeds available stock")
 
         item.quantity = data.quantity
         item.subtotal = item.unit_price * item.quantity

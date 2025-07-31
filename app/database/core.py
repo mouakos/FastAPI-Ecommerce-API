@@ -8,10 +8,9 @@ from sqlalchemy.orm import sessionmaker
 from passlib.hash import bcrypt
 from faker import Faker
 
-from app.users.schemas import UserRole
 from app.models import *  # noqa: F403
 from app.config import settings
-from app.models.user import Gender, User
+from app.models.user import User
 
 fake = Faker()
 
@@ -45,7 +44,7 @@ async def create_admin():
     async_session = local_session
     async with async_session() as session:
         # Check if any admin exists
-        existing = await session.exec(select(User).where(User.role == UserRole.admin))
+        existing = await session.exec(select(User).where(User.role == "admin"))
         if existing.first():
             return
 
@@ -53,8 +52,8 @@ async def create_admin():
             full_name=settings.ADMIN_FULL_NAME,
             email=settings.ADMIN_EMAIL,
             password_hash=bcrypt.hash(settings.ADMIN_PASSWORD),
-            gender=Gender.other,
-            role=UserRole.admin,
+            gender="other",
+            role="admin",
         )
         session.add(admin)
         await session.commit()

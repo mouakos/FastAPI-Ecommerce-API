@@ -3,27 +3,19 @@ from fastapi import APIRouter, Depends, Query, status
 from typing import Optional, Annotated
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-
-
-from app.reviews.schemas import (
-    AdminReviewUpdate,
-    ReviewCreate,
-    ReviewRead,
-    ReviewUpdate,
-)
-from app.auth.schemas import TokenData
-from app.reviews.service import ReviewService
-from app.auth.dependencies import  RoleChecker, AccessTokenBearer
-from app.users.schemas import UserRole
-from app.utils.paginate import PaginatedResponse
-from app.database.core import get_session
-
+from ...utils.paginate import PaginatedResponse
+from ...database.core import get_session
+from ..auth.schemas import TokenData
+from ..auth.dependencies import RoleChecker, AccessTokenBearer
+from .service import ReviewService
+from .schemas import AdminReviewUpdate, ReviewCreate, ReviewRead, ReviewUpdate
 
 router = APIRouter(prefix="/api/v1/reviews", tags=["Reviews"])
-admin_role_checker = Depends(RoleChecker([UserRole.admin]))
+admin_role_checker = Depends(RoleChecker(["admin"]))
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
+
 
 # User endpoints
 @router.get(

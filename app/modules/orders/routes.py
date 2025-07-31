@@ -3,19 +3,16 @@ from typing import Annotated, List
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.auth.dependencies import AccessTokenBearer, RoleChecker
-from app.auth.schemas import TokenData
-from app.database.core import get_session
-from app.orders.schemas import OrderRead, OrderStatusUpdate
-from app.orders.service import OrderService
-from app.users.schemas import UserRole
+from ...database.core import get_session
+from ..auth.dependencies import AccessToken, RoleChecker
+from .schemas import OrderRead, OrderStatusUpdate
+from .service import OrderService
 
 router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
 
-role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+role_checker_admin = Depends(RoleChecker(["admin"]))
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
-AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
 
 
 # User endpoints

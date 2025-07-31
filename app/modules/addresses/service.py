@@ -2,9 +2,9 @@ from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 
-from app.exceptions import NotFoundError
-from app.models.address import Address
-from app.addresses.schemas import AddressCreate, AddressRead, AddressUpdate
+from ...exceptions import NotFoundError
+from ...models.address import Address
+from .schemas import AddressCreate, AddressRead, AddressUpdate
 
 
 class AddressService:

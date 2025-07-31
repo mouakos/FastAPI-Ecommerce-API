@@ -1,16 +1,11 @@
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-
-from app.exceptions import NotFoundError
-from app.models.product import Product
-from app.models.user import User
-from app.models.wishlist import Wishlist, WishlistItem
-from app.wishlist.schemas import (
-    WishlistRead,
-    WishlistItemCreate,
-    WishlistItemRead,
-)
+from ...exceptions import NotFoundError
+from ...models.product import Product
+from ...models.user import User
+from ...models.wishlist import Wishlist, WishlistItem
+from .schemas import WishlistRead, WishlistItemCreate, WishlistItemRead
 
 
 class WishlistService:
@@ -29,7 +24,7 @@ class WishlistService:
         user = await db.get(User, user_id)
         if not user:
             raise NotFoundError(f"User with ID {user_id} not found")
-        
+
         wishlist = await db.get(Wishlist, user.id)
         if wishlist:
             return wishlist

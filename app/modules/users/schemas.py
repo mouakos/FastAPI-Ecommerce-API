@@ -1,24 +1,12 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr, Field
-from enum import Enum
 from uuid import UUID
 
-from app.addresses.schemas import AddressRead
-from app.orders.schemas import OrderRead
-from app.reviews.schemas import ReviewRead
-from app.wishlist.schemas import WishlistRead
-
-
-class Gender(str, Enum):
-    male = "male"
-    female = "female"
-    other = "other"
-
-
-class UserRole(str, Enum):
-    customer = "customer"
-    admin = "admin"
+from ..addresses.schemas import AddressRead
+from ..orders.schemas import OrderRead
+from ..reviews.schemas import ReviewRead
+from ..wishlist.schemas import WishlistRead
 
 
 class UserBase(BaseModel):
@@ -26,7 +14,9 @@ class UserBase(BaseModel):
         ..., min_length=2, max_length=50, description="Full name of the user"
     )
     email: EmailStr = Field(..., max_length=50, description="Email address of the user")
-    gender: Gender = Field(..., description="Gender of the user")
+    gender: Literal["male", "female", "other"] = Field(
+        default="other", description="Gender of the user"
+    )
 
 
 class UserCreate(UserBase):
@@ -44,7 +34,10 @@ class UserRead(UserBase):
     id: UUID = Field(..., description="Unique identifier for the user")
     date_of_birth: Optional[date] = Field(None, description="Date of birth of the user")
     phone_number: Optional[str] = Field(None, description="Phone number of the user")
-    role: UserRole = Field(default=UserRole.customer, description="Role of the user")
+    role: Literal["customer", "admin"] = Field(..., description="Role of the user")
+    gender: Literal["male", "female", "other"] = Field(
+        ..., description="Gender of the user"
+    )
     is_active: bool = Field(
         default=True, description="Indicates if the user account is active"
     )
@@ -77,14 +70,16 @@ class UserUpdate(BaseModel):
     phone_number: Optional[str] = Field(
         None, max_length=15, description="Phone number of the user"
     )
+    gender: Optional[Literal["male", "female", "other"]] = Field(
+        default="other", description="Gender of the user"
+    )
 
 
 class AdminUserUpdate(UserUpdate):
-    role: Optional[UserRole] = Field(None, description="Role of the user")
+    role: Optional[Literal["customer", "admin"]] = Field(None, description="Role of the user")
     is_active: Optional[bool] = Field(
         None, description="Indicates if the user account is active"
     )
-
 
 
 class PasswordUpdate(BaseModel):

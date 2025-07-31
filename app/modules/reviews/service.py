@@ -4,23 +4,12 @@ from sqlmodel import select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
 
-from app.models.product import Product
-from app.models.review import Review
-from app.models.user import User
-
-from app.reviews.schemas import (
-    AdminReviewUpdate,
-    ReviewCreate,
-    ReviewRead,
-    ReviewUpdate,
-)
-from app.exceptions import (
-    AuthorizationError,
-    ConflictError,
-    NotFoundError,
-)
-from app.users.schemas import UserRole
-from app.utils.paginate import PaginatedResponse
+from ...models.product import Product
+from ...models.review import Review
+from ...models.user import User
+from ...exceptions import AuthorizationError, ConflictError, NotFoundError
+from ...utils.paginate import PaginatedResponse
+from .schemas import AdminReviewUpdate, ReviewCreate, ReviewRead, ReviewUpdate
 
 
 class ReviewService:
@@ -260,7 +249,7 @@ class ReviewService:
         if not review:
             raise NotFoundError(f"Review with ID {review_id} not found")
 
-        if review.user_id != user.id and user.role != UserRole.admin:
+        if review.user_id != user.id and user.role != "admin":
             raise AuthorizationError("You do not have permission to delete this review")
 
         await db.delete(review)

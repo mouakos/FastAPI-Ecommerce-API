@@ -2,12 +2,12 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from datetime import timedelta, datetime
 
-from app.exceptions import AuthenticationError, ConflictError
-from app.auth.schemas import TokenData, UserLogin, TokenResponse
-from app.models.user import User
-from app.users.schemas import UserCreate, UserRead
-from app.utils.security import create_token, generate_password_hash, verify_password
-from app.config import settings
+from ...utils.security import create_token, generate_password_hash, verify_password
+from ...config import settings
+from ...exceptions import AuthenticationError, ConflictError
+from ...models.user import User
+from ..users.schemas import UserCreate, UserRead
+from .schemas import TokenData, UserLogin, TokenResponse
 
 
 class AuthService:
@@ -31,7 +31,7 @@ class AuthService:
         ).first()
         if not user or not verify_password(login_data.password, user.password_hash):
             raise AuthenticationError("Invalid email or password.")
-        
+
         access_token = create_token(str(user.id), user.role.value)
         refresh_token = create_token(
             str(user.id),
@@ -39,7 +39,7 @@ class AuthService:
             timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS),
             refresh=True,
         )
-        
+
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
@@ -66,7 +66,7 @@ class AuthService:
         ).first()
         if existing_user:
             raise ConflictError(f"User with email {user_data.email} already exists.")
-        
+
         user = User(
             **user_data.model_dump(),
             password_hash=generate_password_hash(user_data.password),

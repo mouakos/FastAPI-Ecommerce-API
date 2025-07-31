@@ -4,12 +4,13 @@ from fastapi import APIRouter, Depends, status
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.auth.service import AuthService
-from app.auth.dependencies import AccessTokenBearer, RefreshTokenBearer
-from app.users.schemas import UserRead, UserCreate
-from app.auth.schemas import TokenData, UserLogin, TokenResponse
-from app.utils.security import token_blocklist
-from app.database.core import get_session
+from ...utils.security import token_blocklist
+from ...database.core import get_session
+from ..users.schemas import UserRead, UserCreate
+from .service import AuthService
+from .dependencies import AccessTokenBearer, RefreshTokenBearer
+from .schemas import TokenData, UserLogin, TokenResponse
+
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 

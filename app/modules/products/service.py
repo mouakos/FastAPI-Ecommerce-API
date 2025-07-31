@@ -6,21 +6,20 @@ from uuid import UUID
 from datetime import datetime
 from slugify import slugify
 
-from app.categories.schemas import CategoryRead
-from app.models.category import Category
-from app.models.product import Product
-from app.models.tag import Tag
-from app.products.schemas import (
+from ...exceptions import NotFoundError, ConflictError
+from ...utils.paginate import PaginatedResponse
+from ...models.category import Category
+from ...models.product import Product
+from ...models.tag import Tag
+from ..categories.schemas import CategoryRead
+from ..reviews.schemas import ReviewRead
+from ..tags.schemas import TagRead
+from .schemas import (
     ProductCreate,
     ProductRead,
     ProductReadDetail,
     ProductUpdate,
 )
-from app.exceptions import NotFoundError, ConflictError
-from app.reviews.schemas import ReviewRead
-from app.tags.schemas import TagRead
-from app.utils.paginate import PaginatedResponse
-
 
 class ProductService:
     @staticmethod
@@ -149,7 +148,7 @@ class ProductService:
         product = await db_session.get(Product, product_id)
         if not product:
             raise NotFoundError(f"Product with ID {product_id} not found.")
-        
+
         category_read = (
             CategoryRead(**product.category.model_dump()) if product.category else None
         )

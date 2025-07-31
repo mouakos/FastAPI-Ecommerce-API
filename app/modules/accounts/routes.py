@@ -4,16 +4,16 @@ from fastapi import APIRouter, Depends, status
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.auth.schemas import TokenData
-from app.users.schemas import PasswordUpdate, UserRead, UserReadDetail, UserUpdate
-from app.users.service import UserService
-from app.auth.dependencies import AccessTokenBearer
-from app.database.core import get_session
+from ...database.core import get_session
+from ..auth.dependencies import AccessToken
+from ..users.schemas import PasswordUpdate, UserRead, UserReadDetail, UserUpdate
+from ..users.service import UserService
+
 
 router = APIRouter(prefix="/api/v1/users/me", tags=["Accounts"])
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
-AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
+
 
 
 @router.get(

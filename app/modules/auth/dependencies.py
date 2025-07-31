@@ -3,10 +3,10 @@ import logging
 from typing_extensions import Annotated
 from fastapi import Depends, Request
 from fastapi.security import HTTPBearer
-from app.auth.schemas import TokenData
-from app.utils.security import decode_access_token, token_blocklist
-from app.users.schemas import UserRole
-from app.exceptions import AuthorizationError, AuthenticationError
+
+from ...utils.security import decode_access_token, token_blocklist
+from ...exceptions import AuthorizationError, AuthenticationError
+from .schemas import TokenData
 
 
 class TokenBearer(HTTPBearer):
@@ -86,8 +86,11 @@ class RefreshTokenBearer(TokenBearer):
             raise AuthenticationError("Refresh token is required.")
 
 
+AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
+
+
 class RoleChecker:
-    def __init__(self, allowed_roles: list[UserRole]) -> None:
+    def __init__(self, allowed_roles: list[str]) -> None:
         self.allowed_roles = allowed_roles
 
     def __call__(

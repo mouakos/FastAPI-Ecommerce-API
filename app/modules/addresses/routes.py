@@ -4,18 +4,15 @@ from uuid import UUID
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.auth.dependencies import AccessTokenBearer, RoleChecker
-from app.addresses.schemas import AddressCreate, AddressUpdate, AddressRead
-from app.addresses.service import AddressService
-from app.auth.schemas import TokenData
-from app.users.schemas import UserRole
-from app.exceptions import AuthorizationError
-from app.database.core import get_session
+from ...exceptions import AuthorizationError
+from ...database.core import get_session
+from ..auth.dependencies import AccessToken, RoleChecker
+from .schemas import AddressCreate, AddressUpdate, AddressRead
+from .service import AddressService
 
 router = APIRouter(prefix="/api/v1/addresses", tags=["Addresses"])
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
-AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
 
 
 # User endpoints
@@ -95,7 +92,7 @@ async def delete_my_address(
 
 
 # Admin endpoints
-role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+role_checker_admin = Depends(RoleChecker(["admin"]))
 
 
 @router.get(

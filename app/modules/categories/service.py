@@ -6,18 +6,11 @@ from sqlmodel import select, func
 from uuid import UUID
 from slugify import slugify
 
-from app.categories.schemas import (
-    CategoryCreate,
-    CategoryRead,
-    CategoryUpdate,
-)
-from app.models.category import Category
-from app.exceptions import (
-    ConflictError,
-    NotFoundError,
-)
-from app.utils.paginate import PaginatedResponse
 
+from ...models.category import Category
+from ...exceptions import ConflictError, NotFoundError
+from ...utils.paginate import PaginatedResponse
+from .schemas import CategoryCreate, CategoryRead, CategoryUpdate
 
 class CategoryService:
     @staticmethod

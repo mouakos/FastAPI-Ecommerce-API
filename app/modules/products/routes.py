@@ -3,21 +3,15 @@ from fastapi import APIRouter, Depends, Query, status
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.products.schemas import (
-    ProductCreate,
-    ProductRead,
-    ProductReadDetail,
-    ProductUpdate,
-)
-from app.products.service import ProductService
-from app.auth.dependencies import RoleChecker
-from app.users.schemas import UserRole
-from app.utils.paginate import PaginatedResponse
-from app.database.core import get_session
+from ...utils.paginate import PaginatedResponse
+from ...database.core import get_session
+from ..auth.dependencies import RoleChecker
+from .service import ProductService
+from .schemas import ProductCreate, ProductRead, ProductReadDetail, ProductUpdate
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
-role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+role_checker_admin = Depends(RoleChecker([U"admin"]))
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 

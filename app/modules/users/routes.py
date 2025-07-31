@@ -1,22 +1,22 @@
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.auth.dependencies import RoleChecker
-from app.database.core import get_session
-from app.users.schemas import (
+from ...utils.paginate import PaginatedResponse
+from ...database.core import get_session
+from ..auth.dependencies import RoleChecker
+from .service import UserService
+from .schemas import (
     AdminUserUpdate,
     UserRead,
     UserReadDetail,
-    UserRole,
 )
-from app.users.service import UserService
-from app.utils.paginate import PaginatedResponse
+
 
 router = APIRouter(prefix="/api/v1/users", tags=["Users"])
 
-role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+role_checker_admin = Depends(RoleChecker(["admin"]))
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
@@ -33,7 +33,7 @@ async def get_all_users(
     page_size: int = Query(
         default=10, ge=1, le=100, description="Number of users per page"
     ),
-    role: Optional[UserRole] = Query(default=None, description="Filter by user role"),
+    role: Optional[Literal["admin", "customer"]] = Query(default=None, description="Filter by user role"),
     is_active: Optional[bool] = Query(
         default=None, description="Filter by active status"
     ),

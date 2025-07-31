@@ -3,15 +3,14 @@ from fastapi import APIRouter, Depends, status, Query, HTTPException
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.auth.dependencies import RoleChecker
-from app.tags.schemas import TagCreate, TagRead, TagReadDetail, TagUpdate
-from app.tags.service import TagService
-from app.users.schemas import UserRole
-from app.utils.paginate import PaginatedResponse
-from app.database.core import get_session
+from ...utils.paginate import PaginatedResponse
+from ...database.core import get_session
+from ..auth.dependencies import RoleChecker
+from .schemas import TagCreate, TagRead, TagReadDetail, TagUpdate
+from .service import TagService
 
 router = APIRouter(prefix="/api/v1/tags", tags=["Tags"])
-role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+role_checker_admin = Depends(RoleChecker(["admin"]))
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 

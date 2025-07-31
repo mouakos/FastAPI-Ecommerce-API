@@ -3,18 +3,18 @@ from fastapi import APIRouter, status, Depends
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.auth.dependencies import AccessTokenBearer, RoleChecker
-from app.auth.schemas import TokenData
-from app.wishlist.service import WishlistService
-from app.wishlist.schemas import WishlistRead, WishlistItemCreate, WishlistItemRead
-from app.users.schemas import UserRole
-from app.database.core import get_session
+from ...database.core import get_session
+from ..auth.dependencies import AccessTokenBearer, RoleChecker
+from ..auth.schemas import TokenData
+from .service import WishlistService
+from .schemas import WishlistRead, WishlistItemCreate, WishlistItemRead
 
 router = APIRouter(prefix="/api/v1/wishlists", tags=["Wishlists"])
 
-role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+role_checker_admin = Depends(RoleChecker(["admin"]))
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
+
 
 # User endpoints
 @router.get("/", response_model=WishlistRead, summary="Get current user's wishlist")

@@ -3,13 +3,12 @@ from typing import Optional
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
-
-from app.models.tag import Tag
-from app.tags.schemas import TagCreate, TagRead, TagReadDetail, TagUpdate
-from app.exceptions import ConflictError, NotFoundError
 from slugify import slugify
 
-from app.utils.paginate import PaginatedResponse
+from ...exceptions import ConflictError, NotFoundError
+from ...models.tag import Tag
+from ...utils.paginate import PaginatedResponse
+from .schemas import TagCreate, TagRead, TagReadDetail, TagUpdate
 
 
 class TagService:

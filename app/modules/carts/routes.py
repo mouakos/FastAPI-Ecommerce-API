@@ -4,15 +4,15 @@ from typing import Annotated
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.auth.schemas import TokenData
-from app.carts.schemas import CartItemCreate, CartItemRead, CartItemUpdate, CartRead
-from app.carts.service import CartService
-from app.auth.dependencies import AccessTokenBearer, RoleChecker
-from app.database.core import get_session
-from app.users.schemas import UserRole
+from ..auth.dependencies import AccessTokenBearer, RoleChecker
+from ...database.core import get_session
+from ..auth.schemas import TokenData
+from .schemas import CartItemCreate, CartItemRead, CartItemUpdate, CartRead
+from .service import CartService
+
 
 router = APIRouter(prefix="/api/v1/cart", tags=["Carts"])
-role_checker_admin = Depends(RoleChecker([UserRole.admin]))
+role_checker_admin = Depends(RoleChecker(["admin"]))
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]

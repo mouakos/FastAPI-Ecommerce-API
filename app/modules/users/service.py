@@ -2,23 +2,18 @@ from typing import Optional
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
-from app.exceptions import (
-    BadRequestError,
-    NotFoundError,
-)
 
-from app.users.schemas import (
+from ...exceptions import BadRequestError, NotFoundError
+from ...utils.security import generate_password_hash, verify_password
+from ...models.user import User
+from ...utils.paginate import PaginatedResponse
+from .schemas import (
     PasswordUpdate,
     UserRead,
     UserReadDetail,
     UserUpdate,
 )
-from app.utils.security import (
-    generate_password_hash,
-    verify_password,
-)
-from app.models.user import User, UserRole
-from app.utils.paginate import PaginatedResponse
+
 
 class UserService:
     @staticmethod
@@ -26,7 +21,7 @@ class UserService:
         db: AsyncSession,
         page: int,
         page_size: int,
-        role: Optional[UserRole],
+        role: Optional[str],
         is_active: Optional[bool],
         search: Optional[str],
     ) -> PaginatedResponse[UserRead]:

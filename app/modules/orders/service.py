@@ -5,11 +5,11 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from fastapi import HTTPException, status
 
-from app.carts.service import CartService
-from app.models.address import Address
-from app.models.order import Order, OrderItem
-from app.models.product import Product
-from app.orders.schemas import OrderCreate, OrderStatus
+from ...models.address import Address
+from ...models.order import Order, OrderItem
+from ...models.product import Product
+from ..carts.service import CartService
+from .schemas import OrderCreate, OrderStatus
 
 
 class OrderService:

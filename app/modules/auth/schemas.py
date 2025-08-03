@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -24,6 +25,9 @@ class TokenData(BaseModel):
     role: str
     refresh: bool
     exp: int
+
+    def get_uuid(self) -> UUID:
+        return UUID(self.sub)
 
     def is_valid(self) -> bool:
         """

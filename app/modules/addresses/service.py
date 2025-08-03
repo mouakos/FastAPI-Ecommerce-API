@@ -1,6 +1,6 @@
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select, desc, update
+from sqlmodel import select, update
 
 from app.exceptions import NotFoundError
 from app.models.address import Address
@@ -39,23 +39,34 @@ class AddressService:
         return address
 
     @staticmethod
-    async def get_address(db: AsyncSession, address_id: UUID) -> AddressRead:
+    async def get_address(
+        db: AsyncSession, user_id: UUID, address_id: UUID
+    ) -> AddressRead:
         """Get an address by its ID.
 
         Args:
             db (AsyncSession): The database session.
             address_id (UUID): The ID of the address to retrieve.
+            user_id (UUID): The ID of the user who owns the address.
 
         Raises:
-            NotFoundError: If the address is not found.
+            NotFoundError: If the user or address is not found.
 
         Returns:
             AddressRead: The retrieved address.
         """
-        result = await db.get(Address, address_id)
-        if not result:
+        user = await db.get(Address, user_id)
+        if not user:
+            raise NotFoundError(f"User with ID {user_id} not found")
+
+        stmt = select(Address).where(
+            Address.id == address_id, Address.user_id == user_id
+        )
+        result = await db.exec(stmt)
+        address = result.first()
+        if not address:
             raise NotFoundError(f"Address with ID {address_id} not found")
-        return result
+        return address
 
     @staticmethod
     async def list_addresses_by_user(
@@ -70,16 +81,12 @@ class AddressService:
         Returns:
             list[AddressRead]: The list of addresses for the user.
         """
-        result = await db.exec(
-            select(Address)
-            .where(Address.user_id == user_id)
-            .order_by(desc(Address.created_at))
-        )
+        result = await db.exec(select(Address).where(Address.user_id == user_id))
         return result.all()
 
     @staticmethod
     async def update_address(
-        db: AsyncSession, address_id: UUID, data: AddressUpdate
+        db: AsyncSession, user_id: UUID, address_id: UUID, data: AddressUpdate
     ) -> AddressRead:
         """Update an existing address.
 
@@ -87,14 +94,24 @@ class AddressService:
             db (AsyncSession): The database session.
             address_id (UUID): The ID of the address to update.
             data (AddressUpdate): The updated data for the address.
+            user_id (UUID): The ID of the user who owns the address.
 
         Raises:
-            NotFoundError: If the address is not found.
+            NotFoundError: If the user or address is not found.
 
         Returns:
             AddressRead: The updated address.
         """
-        address = await db.get(Address, address_id)
+        user = await db.get(Address, user_id)
+        if not user:
+            raise NotFoundError(f"User with ID {user_id} not found")
+
+        stmt = select(Address).where(
+            Address.id == address_id, Address.user_id == user_id
+        )
+        result = await db.exec(stmt)
+        address = result.first()
+
         if not address:
             raise NotFoundError(f"Address with ID {address_id} not found")
 
@@ -113,24 +130,31 @@ class AddressService:
         for key, value in update_data.items():
             setattr(address, key, value)
 
-        # TODO: Update UpdatedAt field of the address
-
         await db.commit()
         return address
 
     @staticmethod
-    async def delete_address(db: AsyncSession, address_id: UUID) -> None:
+    async def delete_address(db: AsyncSession, user_id: UUID, address_id: UUID) -> None:
         """Delete an address by its ID.
 
         Args:
             db (AsyncSession): The database session.
             address_id (UUID): The ID of the address to delete.
+            user_id (UUID): The ID of the user who owns the address.
 
         Raises:
-            NotFoundError: If the address is not found.
+            NotFoundError: If the user or address is not found.
         """
 
-        address = await db.get(Address, address_id)
+        user = await db.get(Address, user_id)
+        if not user:
+            raise NotFoundError(f"User with ID {user_id} not found")
+
+        stmt = select(Address).where(
+            Address.id == address_id, Address.user_id == user_id
+        )
+        result = await db.exec(stmt)
+        address = result.first()
         if not address:
             raise NotFoundError(f"Address with ID {address_id} not found")
 

@@ -16,7 +16,7 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 @router.get("/me/wishlist", response_model=WishlistRead)
 async def get_my_wishlist(db: DbSession, token_data: AccessToken) -> WishlistRead:
-    return await WishlistService.get_user_wishlist(db, UUID(token_data.sub))
+    return await WishlistService.get_user_wishlist(db, token_data.get_uuid())
 
 
 @router.post(
@@ -30,7 +30,7 @@ async def add_item_to_my_wishlist(
     token_data: AccessToken,
 ) -> WishlistItemRead:
     return await WishlistService.add_item_to_user_wishlist(
-        db, UUID(token_data.sub), data
+        db, token_data.get_uuid(), data
     )
 
 
@@ -43,13 +43,13 @@ async def remove_item_from_my_wishlist(
     token_data: AccessToken,
 ):
     await WishlistService.remove_item_from_user_wishlist(
-        db, UUID(token_data.sub), product_id
+        db, token_data.get_uuid(), product_id
     )
 
 
 @router.delete("/me/wishlist/clear", status_code=status.HTTP_204_NO_CONTENT)
 async def clear_my_wishlist(db: DbSession, token_data: AccessToken):
-    await WishlistService.clear_user_wishlist(db, UUID(token_data.sub))
+    await WishlistService.clear_user_wishlist(db, token_data.get_uuid())
 
 
 @router.get(

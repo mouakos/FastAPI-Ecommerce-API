@@ -3,10 +3,10 @@ from fastapi import APIRouter, Depends, Query, status
 from typing import Optional, Annotated
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ...utils.paginate import PaginatedResponse
-from ...database.core import get_session
-from ..auth.schemas import TokenData
-from ..auth.dependencies import RoleChecker, AccessTokenBearer
+from app.exceptions import AuthorizationError
+from app.utils.paginate import PaginatedResponse
+from app.database.core import get_session
+from app.modules.auth.dependencies import RoleChecker, AccessToken
 from .service import ReviewService
 from .schemas import AdminReviewUpdate, ReviewCreate, ReviewRead, ReviewUpdate
 
@@ -14,14 +14,11 @@ router = APIRouter(prefix="/api/v1/reviews", tags=["Reviews"])
 admin_role_checker = Depends(RoleChecker(["admin"]))
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
-AccessToken = Annotated[TokenData, Depends(AccessTokenBearer())]
 
 
-# User endpoints
 @router.get(
     "/product/{product_id}",
     response_model=PaginatedResponse[ReviewRead],
-    summary="List published product reviews",
 )
 async def list_product_reviews(
     product_id: UUID,
@@ -58,7 +55,6 @@ async def list_product_reviews(
     "/product/{product_id}",
     response_model=ReviewRead,
     status_code=status.HTTP_201_CREATED,
-    summary="Add a review to a product",
 )
 async def create_review(
     product_id: UUID,
@@ -72,7 +68,6 @@ async def create_review(
 @router.patch(
     "/{review_id}",
     response_model=ReviewRead,
-    summary="Update my review",
 )
 async def update_review(
     review_id: UUID,
@@ -86,33 +81,31 @@ async def update_review(
 @router.get(
     "/{review_id}",
     response_model=ReviewRead,
-    summary="Get review by ID",
 )
 async def get_review(
-    review_id: UUID, db: DbSession, token_data: AccessToken
+    review_id: UUID, db: DbSession, _: AccessToken
 ) -> ReviewRead:
     return await ReviewService.get_review(db, review_id)
 
 
-@router.delete(
-    "/{review_id}", summary="Delete my review", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_review(
     review_id: UUID,
     db: DbSession,
     token_data: AccessToken,
 ) -> None:
+    review = await ReviewService.get_review(db, review_id)
+    if review.user_id != UUID(token_data.sub) or token_data.role != "admin":
+        raise AuthorizationError("You do not have permission to delete this review.")
     await ReviewService.delete_review(db, review_id, UUID(token_data.sub))
 
 
-# Admin endpoints
 @router.get(
-    "/admin/product/{product_id}",
+    "/all/products/{product_id}",
     response_model=PaginatedResponse[ReviewRead],
-    summary="List all product reviews (admin)",
     dependencies=[admin_role_checker],
 )
-async def admin_list_all_product_reviews(
+async def list_all_product_reviews(
     product_id: UUID,
     db: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
@@ -148,31 +141,13 @@ async def admin_list_all_product_reviews(
 
 
 @router.patch(
-    "/admin/{review_id}",
+    "/{review_id}/change-visibility",
     response_model=ReviewRead,
-    summary="Change review visibility (admin)",
     dependencies=[admin_role_checker],
 )
-async def admin_change_review_visibility(
+async def change_review_visibility(
     review_id: UUID,
     data: AdminReviewUpdate,
     db: DbSession,
-    token_data: AccessToken,
 ) -> ReviewRead:
-    return await ReviewService.change_review_visibility(
-        db, review_id, UUID(token_data.sub), data
-    )
-
-
-@router.delete(
-    "/admin/{review_id}",
-    summary="Delete any review (admin)",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[admin_role_checker],
-)
-async def admin_delete_review(
-    review_id: UUID,
-    db: DbSession,
-    token_data: AccessToken,
-) -> None:
-    await ReviewService.delete_review(db, review_id, UUID(token_data.sub))
+    return await ReviewService.change_review_visibility(db, review_id, data)

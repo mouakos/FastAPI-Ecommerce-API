@@ -7,7 +7,7 @@ from uuid import UUID
 from ...models.product import Product
 from ...models.review import Review
 from ...models.user import User
-from ...exceptions import AuthorizationError, ConflictError, NotFoundError
+from ...exceptions import ConflictError, NotFoundError
 from ...utils.paginate import PaginatedResponse
 from .schemas import AdminReviewUpdate, ReviewCreate, ReviewRead, ReviewUpdate
 
@@ -157,7 +157,7 @@ class ReviewService:
 
     @staticmethod
     async def update_review(
-        db: AsyncSession, review_id: UUID, user_id: UUID, data: ReviewUpdate
+        db: AsyncSession, review_id: UUID, data: ReviewUpdate
     ) -> ReviewRead:
         """
         Update an existing review.
@@ -165,26 +165,18 @@ class ReviewService:
         Args:
             db (AsyncSession): The database session.
             review_id (UUID): Review ID.
-            user_id (UUID): ID of the user updating the review.
             data (ReviewUpdate): Updated review data.
 
         Raises:
-            NotFoundError: If the review or user does not exist.
-            AuthorizationError: If the user does not own the review.
+            NotFoundError: If the review  does not exist.
 
         Returns:
             ReviewRead: The updated review.
         """
-        user = await db.get(User, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
 
         review = await db.get(Review, review_id)
         if not review:
             raise NotFoundError(f"Review with ID {review_id} not found")
-
-        if review.user_id != user.id:
-            raise AuthorizationError("You do not have permission to update this review")
 
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
@@ -228,29 +220,20 @@ class ReviewService:
         return review
 
     @staticmethod
-    async def delete_review(db: AsyncSession, review_id: UUID, user_id: UUID) -> None:
+    async def delete_review(db: AsyncSession, review_id: UUID) -> None:
         """
         Delete a review by its ID.
 
         Args:
             db (AsyncSession): The database session.
             review_id (UUID): Review ID.
-            user_id (UUID): ID of the user requesting the deletion.
-
+    
         Raises:
             NotFoundError: If the user or review does not exist.
-            AuthorizationError: If the user does not own the review or is not an admin.
         """
-        user = await db.get(User, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
-
         review = await db.get(Review, review_id)
         if not review:
             raise NotFoundError(f"Review with ID {review_id} not found")
-
-        if review.user_id != user.id and user.role != "admin":
-            raise AuthorizationError("You do not have permission to delete this review")
 
         await db.delete(review)
         await db.commit()

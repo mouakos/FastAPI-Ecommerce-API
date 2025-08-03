@@ -27,7 +27,7 @@ class AuthService:
         Returns:
             TokenResponse: User login token.
         """
-        user = await AuthService.get_user_by_email(db, login_data.email)
+        user = await AuthService._get_user_by_email(db, login_data.email)
         if not user or not verify_password(login_data.password, user.password_hash):
             raise AuthenticationError("Invalid email or password.")
 
@@ -48,7 +48,7 @@ class AuthService:
             UserRead: Created user.
         """
 
-        existing_user = await AuthService.get_user_by_email(db, user_data.email)
+        existing_user = await AuthService._get_user_by_email(db, user_data.email)
         if existing_user:
             raise ConflictError(f"User with email {user_data.email} already exists.")
 
@@ -109,7 +109,7 @@ class AuthService:
         )
 
     @staticmethod
-    async def get_user_by_email(db: AsyncSession, email: str) -> Optional[UserRead]:
+    async def _get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
         """
         Get user by email.
 

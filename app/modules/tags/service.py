@@ -2,12 +2,12 @@ from math import ceil
 from typing import Optional
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select
+from sqlmodel import select, func
 from slugify import slugify
 
-from ...exceptions import ConflictError, NotFoundError
-from ...models.tag import Tag
-from ...utils.paginate import PaginatedResponse
+from app.exceptions import ConflictError, NotFoundError
+from app.models.tag import Tag
+from app.utils.paginate import PaginatedResponse
 from .schemas import TagCreate, TagRead, TagReadDetail, TagUpdate
 
 
@@ -35,13 +35,22 @@ class TagService:
         Returns:
             PaginatedResponse[TagRead]: A paginated response containing the tags.
         """
-        query = select(Tag).where(
+        stmt_count = (
+            select(func.count())
+            .select_from(Tag)
+            .where(
+                (Tag.name.ilike(f"%{search}%")) if search else True,
+                (Tag.is_active == is_active) if is_active is not None else True,
+            )
+        )
+        total = (await db.exec(stmt_count)).one()
+        stmt = select(Tag).where(
             (Tag.name.ilike(f"%{search}%")) if search else True,
             (Tag.is_active == is_active) if is_active is not None else True,
         )
-        result = await db.exec(query)
+        result = await db.exec(stmt)
         tags = result.all()
-        total = len(tags)
+
         return PaginatedResponse[Tag](
             total=total,
             page=page,
@@ -85,7 +94,7 @@ class TagService:
             TagRead: The created tag.
         """
         slug = slugify(data.name)
-        exists_tag = await db.exec(select(Tag).where(Tag.slug == slug))
+        exists_tag = (await db.exec(select(Tag).where(Tag.slug == slug))).first()
         if exists_tag:
             raise ConflictError(f"Tag with name '{data.name}' already exists.")
         tag = Tag(name=data.name, slug=slug)
@@ -116,7 +125,9 @@ class TagService:
 
         if data.name and data.name.lower() != tag.name.lower():
             new_slug = slugify(data.name)
-            exists_tag = await db.exec(select(Tag).where(Tag.slug == new_slug))
+            exists_tag = (
+                await db.exec(select(Tag).where(Tag.slug == new_slug))
+            ).first()
             if exists_tag and exists_tag.id != tag_id:
                 raise ConflictError(f"Tag with name '{data.name}' already exists.")
             tag.name = data.name

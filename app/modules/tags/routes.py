@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends, status, Query, HTTPException
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ...utils.paginate import PaginatedResponse
-from ...database.core import get_session
-from ..auth.dependencies import RoleChecker
+from app.utils.paginate import PaginatedResponse
+from app.database.core import get_session
+from app.modules.auth.dependencies import RoleChecker
 from .schemas import TagCreate, TagRead, TagReadDetail, TagUpdate
 from .service import TagService
 
@@ -16,11 +16,7 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
 # User endpoints
-@router.get(
-    "/",
-    response_model=PaginatedResponse[TagRead],
-    summary="List active tags",
-)
+@router.get("/", response_model=PaginatedResponse[TagRead])
 async def list_tags(
     db_session: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
@@ -34,11 +30,7 @@ async def list_tags(
     )
 
 
-@router.get(
-    "/{tag_id}",
-    response_model=TagReadDetail,
-    summary="Get tag by ID",
-)
+@router.get("/{tag_id}", response_model=TagReadDetail)
 async def get_tag(tag_id: UUID, db_session: DbSession) -> TagReadDetail:
     tag = await TagService.get_tag(db_session, tag_id)
     if not tag.is_active:
@@ -48,12 +40,11 @@ async def get_tag(tag_id: UUID, db_session: DbSession) -> TagReadDetail:
 
 # Admin endpoints
 @router.get(
-    "/admin/",
+    "/all",
     response_model=PaginatedResponse[TagRead],
-    summary="List all tags (admin)",
     dependencies=[role_checker_admin],
 )
-async def admin_list_all_tags(
+async def list_all_tags(
     db_session: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
     page_size: int = Query(
@@ -70,10 +61,9 @@ async def admin_list_all_tags(
 
 
 @router.post(
-    "/admin/",
+    "/",
     response_model=TagRead,
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new tag (admin)",
     dependencies=[role_checker_admin],
 )
 async def admin_create_tag(data: TagCreate, db_session: DbSession) -> TagRead:
@@ -81,20 +71,16 @@ async def admin_create_tag(data: TagCreate, db_session: DbSession) -> TagRead:
 
 
 @router.patch(
-    "/admin/{tag_id}",
+    "/{tag_id}",
     response_model=TagRead,
-    summary="Update an existing tag (admin)",
     dependencies=[role_checker_admin],
 )
-async def admin_update_tag(
-    tag_id: UUID, data: TagUpdate, db_session: DbSession
-) -> TagRead:
+async def update_tag(tag_id: UUID, data: TagUpdate, db_session: DbSession) -> TagRead:
     return await TagService.update_tag(db_session, tag_id, data)
 
 
 @router.delete(
-    "/admin/{tag_id}",
-    summary="Delete a tag (admin)",
+    "/{tag_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[role_checker_admin],
 )

@@ -24,7 +24,6 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 @router.get(
     "/",
     response_model=PaginatedResponse[UserRead],
-    summary="Get All Users",
     dependencies=[role_checker_admin],
 )
 async def get_all_users(
@@ -54,7 +53,6 @@ async def get_all_users(
 @router.get(
     "/{user_id}",
     response_model=UserReadDetail,
-    summary="Get User details by ID",
     dependencies=[role_checker_admin],
 )
 async def get_user(db_session: DbSession, user_id: UUID) -> UserReadDetail:
@@ -64,7 +62,6 @@ async def get_user(db_session: DbSession, user_id: UUID) -> UserReadDetail:
 @router.patch(
     "/{user_id}",
     response_model=UserRead,
-    summary="Update User by ID",
     dependencies=[role_checker_admin],
 )
 async def update_user(
@@ -77,7 +74,6 @@ async def update_user(
 
 @router.delete(
     "/{user_id}",
-    summary="Delete User by ID",
     dependencies=[role_checker_admin],
     status_code=status.HTTP_204_NO_CONTENT,
 )

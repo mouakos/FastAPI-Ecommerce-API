@@ -48,15 +48,22 @@ class UserService:
         )
         total = (await db.exec(stmt_count)).one()
 
-        stmt = select(User).where(
-            (User.role == role) if role else True,
-            (User.is_active == is_active) if is_active is not None else True,
-            (User.email.ilike(f"%{search}%")) if search else True,
+        stmt = (
+            select(User)
+            .where(
+                (User.role == role) if role else True,
+                (User.is_active == is_active) if is_active is not None else True,
+                (User.email.ilike(f"%{search}%")) if search else True,
+            )
+            .order_by(User.email)
+            .limit(page_size)
+            .offset((page - 1) * page_size)
         )
+        
         result = await db.exec(stmt)
         users = result.all()
         return PaginatedResponse[UserRead](
-            items=users[(page - 1) * page_size : page * page_size],
+            items=users,
             total=total,
             page=page,
             page_size=page_size,

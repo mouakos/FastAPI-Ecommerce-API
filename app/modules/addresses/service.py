@@ -24,17 +24,15 @@ class AddressService:
         Returns:
             AddressRead: The created address.
         """
-        user = await db.get(Address, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
+        user = await UserService.get_user(db, user_id)
 
         if data.is_default_shipping:
-            await AddressService._unset_default_flag(db, user_id, "is_default_shipping")
+            await AddressService._unset_default_flag(db, user.id, "is_default_shipping")
 
         if data.is_default_billing:
-            await AddressService._unset_default_flag(db, user_id, "is_default_billing")
+            await AddressService._unset_default_flag(db, user.id, "is_default_billing")
 
-        address = Address(**data.model_dump(), user_id=user_id)
+        address = Address(**data.model_dump(), user_id=user.id)
         db.add(address)
         await db.commit()
         return address

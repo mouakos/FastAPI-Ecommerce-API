@@ -1,10 +1,11 @@
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import select
 
-from ...exceptions import NotFoundError
-from ...models.product import Product
-from ...models.user import User
-from ...models.wishlist import Wishlist, WishlistItem
+from app.exceptions import NotFoundError
+from app.models.product import Product
+from app.models.user import User
+from app.models.wishlist import Wishlist, WishlistItem
 from .schemas import WishlistRead, WishlistItemCreate, WishlistItemRead
 
 
@@ -21,17 +22,7 @@ class WishlistService:
         Returns:
             WishlistRead: The user's wishlist with items.
         """
-        user = await db.get(User, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
-
-        wishlist = await db.get(Wishlist, user.id)
-        if wishlist:
-            return wishlist
-        wishlist = Wishlist(user_id=user.id)
-        await db.add(wishlist)
-        await db.commit()
-        return wishlist
+        return await WishlistService._get_or_create_wishlist(db, user_id)
 
     @staticmethod
     async def add_item(
@@ -48,22 +39,16 @@ class WishlistService:
         Returns:
             WishlistItemRead: The created or existing wishlist item.
         """
-        user = await db.get(User, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
+
+        wishlist = await WishlistService._get_or_create_wishlist(db, user_id)
 
         product = await db.get(Product, data.product_id)
         if not product:
             raise NotFoundError(f"Product with ID {data.product_id} not found")
 
-        wishlist = await db.get(Wishlist, user.id)
-
-        if wishlist:
-            for item in wishlist.items:
-                if item.product_id == product.id:
-                    return item
-        else:
-            wishlist = Wishlist(user_id=user.id)
+        for item in wishlist.items:
+            if item.product_id == product.id:
+                return item
 
         item = WishlistItem(
             wishlist_id=wishlist.id,
@@ -84,17 +69,12 @@ class WishlistService:
         Raise:
             ResourceNotFound: If the user or product does not exist.
         """
-        user = await db.get(User, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
+        wishlist = await WishlistService._get_or_create_wishlist(db, user_id)
 
         product = await db.get(Product, product_id)
         if not product:
             raise NotFoundError(f"Product with ID {product_id} not found")
 
-        wishlist = await db.get(Wishlist, user.id)
-        if wishlist is None:
-            return
         for item in wishlist.items:
             if item.product_id == product.id:
                 await db.delete(item)
@@ -111,13 +91,32 @@ class WishlistService:
         Raise:
             ResourceNotFound: If the user does not exist.
         """
+        wishlist = await WishlistService._get_or_create_wishlist(db, user_id)
+        for item in wishlist.items:
+            await db.delete(item)
+        await db.commit()
+
+    @staticmethod
+    async def _get_or_create_wishlist(db: AsyncSession, user_id: UUID) -> Wishlist:
+        """
+        Get or create a wishlist for the user.
+        Args:
+            db (AsyncSession): The database session.
+            user_id (UUID): The user's unique identifier.
+        Raise:
+            ResourceNotFound: If the user does not exist.
+        Returns:
+            Wishlist: The user's wishlist.
+        """
         user = await db.get(User, user_id)
         if not user:
             raise NotFoundError(f"User with ID {user_id} not found")
 
-        wishlist = await db.get(Wishlist, user.id)
-        if wishlist is None:
-            return
-        for item in wishlist.items:
-            await db.delete(item)
-        await db.commit()
+        result = await db.exec(select(Wishlist).where(Wishlist.user_id == user_id))
+        wishlist = result.first()
+
+        if not wishlist:
+            wishlist = Wishlist(user_id=user_id)
+            await db.add(wishlist)
+            await db.commit()
+        return wishlist

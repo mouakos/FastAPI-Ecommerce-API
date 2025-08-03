@@ -105,8 +105,8 @@ class CategoryService:
         """
 
         slug = slugify(category_data.name)
-        exists = await CategoryService._get_category_by_slug(db, slug)
-        if exists:
+        existing_category = await CategoryService._get_category_by_slug(db, slug)
+        if existing_category:
             raise ConflictError(
                 f"Category with name {category_data.name} already exists."
             )
@@ -141,9 +141,11 @@ class CategoryService:
 
         if update_data.name and update_data.name.lower() != category.name.lower():
             new_slug = slugify(update_data.name)
-            exists = await CategoryService._get_category_by_slug(db, new_slug)
+            existing_category = await CategoryService._get_category_by_slug(
+                db, new_slug
+            )
 
-            if exists and exists.id != category_id:
+            if existing_category and existing_category.id != category_id:
                 raise ConflictError(f"Category with slug {new_slug} already exists.")
             category.slug = new_slug
 

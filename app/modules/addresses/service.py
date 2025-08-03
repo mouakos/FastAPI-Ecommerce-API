@@ -2,8 +2,8 @@ from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, desc, update
 
-from ...exceptions import NotFoundError
-from ...models.address import Address
+from app.exceptions import NotFoundError
+from app.models.address import Address
 from .schemas import AddressCreate, AddressRead, AddressUpdate
 
 
@@ -144,4 +144,3 @@ class AddressService:
             .where(Address.user_id == user_id)
             .values({flag_field: False})
         )
-        

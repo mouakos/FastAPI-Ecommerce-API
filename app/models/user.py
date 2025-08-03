@@ -1,17 +1,14 @@
-from enum import Enum
 from typing import Optional, TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel
-from datetime import datetime, date
+from datetime import date
 from uuid import UUID, uuid4
-from app.utils.date_time_provider import get_utc_now
-
-from app.models.cart import Cart
-from app.models.order import Order
 
 if TYPE_CHECKING:
-    from app.models.review import Review
-    from app.models.address import Address
-    from app.models.wishlist import Wishlist
+    from .review import Review
+    from .address import Address
+    from .wishlist import Wishlist
+    from .cart import Cart
+    from .order import Order
 
 
 class User(SQLModel, table=True):
@@ -26,9 +23,6 @@ class User(SQLModel, table=True):
     phone_number: Optional[str] = Field(default=None, nullable=True)
     role: Optional[str] = Field(default="customer", nullable=False)
     is_active: bool = Field(default=True, nullable=False)
-
-    created_at: datetime = Field(default_factory=get_utc_now, nullable=False)
-    updated_at: datetime = Field(default_factory=get_utc_now, nullable=False)
 
     # Relationship with addresses - one-to-many
     addresses: list["Address"] = Relationship(

@@ -4,8 +4,8 @@ from typing_extensions import Annotated
 from fastapi import Depends, Request
 from fastapi.security import HTTPBearer
 
-from ...utils.security import decode_access_token, token_blocklist
-from ...exceptions import AuthorizationError, AuthenticationError
+from app.utils.security import decode_access_token, token_blocklist
+from app.exceptions import AuthorizationError, AuthenticationError
 from .schemas import TokenData
 
 

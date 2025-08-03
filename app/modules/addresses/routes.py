@@ -4,9 +4,9 @@ from uuid import UUID
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ...exceptions import AuthorizationError
-from ...database.core import get_session
-from ..auth.dependencies import AccessToken, RoleChecker
+from app.exceptions import AuthorizationError
+from app.database.core import get_session
+from app.modules.auth.dependencies import AccessToken, RoleChecker
 from .schemas import AddressCreate, AddressUpdate, AddressRead
 from .service import AddressService
 

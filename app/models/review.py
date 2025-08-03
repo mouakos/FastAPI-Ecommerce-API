@@ -1,9 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
-from datetime import datetime
 from uuid import UUID, uuid4
 from typing import Optional, TYPE_CHECKING
-
-from app.utils.date_time_provider import get_utc_now
 
 if TYPE_CHECKING:
     from app.models.product import Product
@@ -17,8 +14,6 @@ class Review(SQLModel, table=True):
     rating: int = Field(ge=1, le=5, nullable=False)
     comment: Optional[str] = Field(default=None)
     is_published: bool = Field(default=True, nullable=False)
-    created_at: datetime = Field(default_factory=get_utc_now, nullable=False)
-    updated_at: datetime = Field(default_factory=get_utc_now, nullable=False)
 
     # Relationship with product - many-to-one
     product_id: UUID = Field(foreign_key="products.id", nullable=False)

@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -11,8 +11,10 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str
     ADMIN_FULL_NAME: str
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(
+        env_file=".env",  # Load environment variables from .env file
+        extra="ignore",  # Ignore extra fields not defined in the model
+    )
 
 
 settings = Settings()

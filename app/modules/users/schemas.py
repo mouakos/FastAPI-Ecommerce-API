@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr, Field
 from uuid import UUID
@@ -41,11 +41,6 @@ class UserRead(UserBase):
     is_active: bool = Field(
         default=True, description="Indicates if the user account is active"
     )
-    created_at: datetime = Field(..., description="Timestamp when the user was created")
-    updated_at: datetime = Field(
-        ..., description="Timestamp when the user was last updated"
-    )
-
 
 class UserReadDetail(UserRead):
     addresses: Optional[list[AddressRead]] = Field(

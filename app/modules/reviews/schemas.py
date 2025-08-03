@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, Field
@@ -21,12 +20,6 @@ class ReviewRead(BaseModel):
     product_id: UUID = Field(..., description="ID of the product being reviewed")
     is_published: bool = Field(
         ..., description="Indicates if the review is published or not"
-    )
-    created_at: datetime = Field(
-        ..., description="Timestamp when the review was created"
-    )
-    updated_at: datetime = Field(
-        ..., description="Timestamp when the review was last updated"
     )
 
 

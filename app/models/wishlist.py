@@ -1,10 +1,9 @@
-from typing import Optional, List
+from typing import Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
-from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
 
-from app.models.user import User
-from app.utils.date_time_provider import get_utc_now
+if TYPE_CHECKING:
+    from .user import User
 
 
 class Wishlist(SQLModel, table=True):
@@ -12,14 +11,12 @@ class Wishlist(SQLModel, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(foreign_key="users.id", nullable=False, index=True)
-    created_at: datetime = Field(default_factory=get_utc_now, nullable=False)
-    updated_at: datetime = Field(default_factory=get_utc_now, nullable=False)
 
     # Relationship to wishlist items
-    items: List["WishlistItem"] = Relationship(
+    items: list["WishlistItem"] = Relationship(
         back_populates="wishlist", sa_relationship_kwargs={"lazy": "selectin"}
     )
-    
+
     # Relationship to User (optional, for backref)
     user: Optional["User"] = Relationship(back_populates="wishlist")
 
@@ -30,7 +27,6 @@ class WishlistItem(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     wishlist_id: UUID = Field(foreign_key="wishlists.id", nullable=False, index=True)
     product_id: UUID = Field(foreign_key="products.id", nullable=False, index=True)
-    added_at: datetime = Field(default_factory=get_utc_now, nullable=False)
 
     # Relationships
-    wishlist: Optional[Wishlist] = Relationship(back_populates="items")
+    wishlist: Optional["Wishlist"] = Relationship(back_populates="items")

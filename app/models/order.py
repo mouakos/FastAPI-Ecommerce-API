@@ -1,12 +1,11 @@
 from typing import Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
-from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
 from enum import Enum
 
 
 if TYPE_CHECKING:
-    from app.models.user import User
+    from .user import User
 
 
 class OrderStatus(str, Enum):
@@ -23,8 +22,6 @@ class Order(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     status: OrderStatus = Field(default=OrderStatus.PENDING, nullable=False)
     total_amount: float = Field(default=0.0, nullable=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
-    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
     # Relationship with user - many-to-one
     user_id: UUID = Field(foreign_key="users.id", nullable=False, index=True)
@@ -53,7 +50,6 @@ class OrderItem(SQLModel, table=True):
     quantity: int = Field(default=1, nullable=False)
     unit_price: float = Field(nullable=False)
     subtotal: float = Field(nullable=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
     # Relationship with order - many-to-one
     order_id: UUID = Field(foreign_key="orders.id", nullable=False, index=True)

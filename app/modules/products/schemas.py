@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, Field
@@ -36,21 +35,13 @@ class ProductRead(ProductCreate):
         default=True, description="Indicates if the product is active"
     )
     slug: str = Field(..., description="Slug of the product")
-    created_at: datetime = Field(..., description="Creation timestamp of the product")
-    updated_at: datetime = Field(
-        ..., description="Last update timestamp of the product"
-    )
-
+    
 
 class ProductReadDetail(ProductBase):
     id: UUID = Field(..., description="Unique identifier of the product")
     slug: str = Field(..., description="Slug of the product")
     is_active: bool = Field(
         default=True, description="Indicates if the product is active"
-    )
-    created_at: datetime = Field(..., description="Creation timestamp of the product")
-    updated_at: datetime = Field(
-        ..., description="Last update timestamp of the product"
     )
     category: CategoryRead = Field(..., description="Category of the product")
     tags: list[TagRead] = Field(

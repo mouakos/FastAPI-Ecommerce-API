@@ -2,11 +2,11 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from datetime import timedelta, datetime
 
-from ...utils.security import create_token, get_password_hash, verify_password
-from ...config import settings
-from ...exceptions import AuthenticationError, ConflictError
-from ...models.user import User
-from ..users.schemas import UserCreate, UserRead
+from app.utils.security import create_token, get_password_hash, verify_password
+from app.config import settings
+from app.exceptions import AuthenticationError, ConflictError
+from app.models.user import User
+from app.modules.users.schemas import UserCreate, UserRead
 from .schemas import TokenData, UserLogin, TokenResponse
 
 

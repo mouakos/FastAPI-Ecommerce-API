@@ -1,7 +1,7 @@
+from typing import TYPE_CHECKING, Optional
 from sqlmodel import SQLModel, Field, Relationship
 from uuid import UUID, uuid4
-from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+
 
 if TYPE_CHECKING:
     from .user import User
@@ -13,9 +13,6 @@ class Cart(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
     total_amount: float = Field(default=0.0, nullable=False)
-
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
-    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
     # Relationship with user - one-to-one
     user_id: UUID = Field(foreign_key="users.id", nullable=False, unique=True)
@@ -30,12 +27,9 @@ class CartItem(SQLModel, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    quantity: int = Field(default=1, nullable=False)
+    quantity: int = Field(nullable=False)
     unit_price: float = Field(nullable=False)
     subtotal: float = Field(nullable=False)
-
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
-    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
     # Relationships with cart - many-to-one
     cart_id: UUID = Field(foreign_key="carts.id", nullable=False)

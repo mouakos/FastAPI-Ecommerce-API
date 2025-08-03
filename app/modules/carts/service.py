@@ -1,12 +1,10 @@
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
-from datetime import datetime
 
-from ...exceptions import ConflictError, NotFoundError
-from ...models.cart import Cart, CartItem
-from ...models.product import Product
-from ...models.user import User
+from app.exceptions import ConflictError, NotFoundError
+from app.models.cart import Cart, CartItem
+from app.models.product import Product
 from .schemas import CartItemCreate, CartItemRead, CartItemUpdate, CartRead
 
 
@@ -42,7 +40,8 @@ class CartService:
             user_id (UUID): Unique identifier for the user.
             data (CartItemCreate): Cart item data to add.
         Raises:
-            NotFoundError: If the product does not exist.
+            NotFoundError: If the product or user does not exist.
+            ConflictError: If the requested quantity exceeds available stock.
 
         Returns:
             CartItem: The created cart item.
@@ -76,7 +75,6 @@ class CartService:
 
         db.add(item)
         await db.commit()
-        await db.refresh(item)
         return item
 
     @staticmethod
@@ -92,7 +90,8 @@ class CartService:
             data (CartItemUpdate): Updated cart item data.
 
         Raises:
-            NotFoundError: If the user or cart item does not exist.
+            NotFoundError: If the user or item does not exist.
+            ConflictError: If the requested quantity exceeds available stock.
 
         Returns:
             CartItem: The updated cart item.
@@ -113,11 +112,11 @@ class CartService:
 
         item.quantity = data.quantity
         item.subtotal = item.unit_price * item.quantity
-        item.updated_at = datetime.utcnow()
+
+        # TODO: update updated_at field for cart and cart item
 
         db.add(item)
         await db.commit()
-        await db.refresh(item)
         return item
 
     @staticmethod
@@ -130,14 +129,11 @@ class CartService:
             item_id (UUID): Unique identifier for the cart item.
 
         Raises:
-            NotFoundError: If the user does not exist.
+            NotFoundError: If the user or cart item does not exist.
         """
-        user = await db.get(User, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
+        cart = await CartService._get_or_create_cart(db, user_id)
 
-        cart = await db.get(Cart, user_id)
-        if not cart:
+        if not cart.items:
             return
 
         stmt = select(CartItem).where(
@@ -147,7 +143,9 @@ class CartService:
         item = result.first()
 
         if not item:
-            raise NotFoundError(f"Cart item with ID {item_id} not found")
+            raise NotFoundError(f"Item with ID {item_id} not found")
+
+        # TODO: update updated_at field for cart
 
         await db.delete(item)
         await db.commit()
@@ -159,12 +157,16 @@ class CartService:
         Args:
             db (AsyncSession): Database session.
             user_id (UUID): Unique identifier for the user.
+
+        Raises:
+            NotFoundError: If the user does not exist.
         """
-        cart = await db.get(Cart, user_id)
-        if not cart:
-            return
+        cart = await CartService._get_or_create_cart(db, user_id)
+
         for item in cart.items:
             await db.delete(item)
+
+        # TODO: update updated_at field for cart
 
         await db.commit()
 
@@ -183,6 +185,7 @@ class CartService:
         user = await db.get(Cart, user_id)
         if not user:
             raise NotFoundError(f"User with ID {user_id} not found")
+
         stmt = select(Cart).where(Cart.user_id == user_id)
         result = await db.exec(stmt)
         cart = result.first()
@@ -192,5 +195,4 @@ class CartService:
         cart = Cart(user_id=user_id)
         db.add(cart)
         await db.commit()
-        await db.refresh(cart)
         return cart

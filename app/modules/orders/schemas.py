@@ -1,4 +1,3 @@
-from datetime import datetime
 from enum import Enum
 from typing import Optional
 from uuid import UUID
@@ -19,10 +18,7 @@ class OrderItemRead(OrderItemCreate):
     subtotal: float = Field(
         ..., description="Subtotal for the item (unit_price * quantity)"
     )
-    created_at: datetime = Field(
-        ..., description="Timestamp when the order item was created"
-    )
-
+   
 
 class OrderCreate(BaseModel):
     shipping_address_id: UUID = Field(
@@ -43,12 +39,6 @@ class OrderRead(BaseModel):
     )
     billing_address_id: Optional[UUID] = Field(
         default=None, description="ID of the billing address for the order"
-    )
-    created_at: datetime = Field(
-        ..., description="Timestamp when the order was created"
-    )
-    updated_at: datetime = Field(
-        ..., description="Timestamp when the order was last updated"
     )
     items: list[OrderItemRead] = Field(
         default_factory=list, description="List of items in the order"

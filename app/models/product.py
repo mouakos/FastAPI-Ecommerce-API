@@ -1,9 +1,8 @@
 from typing import Optional, TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel
-from datetime import datetime
 from uuid import UUID, uuid4
 
-from app.models.product_tag import ProductTag
+from .product_tag import ProductTag
 
 if TYPE_CHECKING:
     from app.models.category import Category
@@ -25,9 +24,6 @@ class Product(SQLModel, table=True):
     sku: str = Field(index=True, unique=True, nullable=False)
     rating: float = Field(default=0.0, nullable=False)
     is_active: bool = Field(default=True, nullable=False)
-
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationship with category - many-to-one
     category_id: UUID = Field(default=None, foreign_key="categories.id", nullable=False)

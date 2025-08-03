@@ -15,7 +15,6 @@ role_checker_admin = Depends(RoleChecker(["admin"]))
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
-# User endpoints
 @router.get("/", response_model=PaginatedResponse[TagRead])
 async def list_tags(
     db_session: DbSession,
@@ -38,7 +37,6 @@ async def get_tag(tag_id: UUID, db_session: DbSession) -> TagReadDetail:
     return tag
 
 
-# Admin endpoints
 @router.get(
     "/all",
     response_model=PaginatedResponse[TagRead],

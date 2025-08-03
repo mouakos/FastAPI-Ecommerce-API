@@ -44,10 +44,17 @@ class TagService:
             )
         )
         total = (await db.exec(stmt_count)).one()
-        stmt = select(Tag).where(
-            (Tag.name.ilike(f"%{search}%")) if search else True,
-            (Tag.is_active == is_active) if is_active is not None else True,
+        stmt = (
+            select(Tag)
+            .where(
+                (Tag.name.ilike(f"%{search}%")) if search else True,
+                (Tag.is_active == is_active) if is_active is not None else True,
+            )
+            .order_by(Tag.name)
+            .limit(page_size)
+            .offset((page - 1) * page_size)
         )
+
         result = await db.exec(stmt)
         tags = result.all()
 
@@ -94,8 +101,8 @@ class TagService:
             TagRead: The created tag.
         """
         slug = slugify(data.name)
-        exists_tag = (await db.exec(select(Tag).where(Tag.slug == slug))).first()
-        if exists_tag:
+        existing_tag = (await db.exec(select(Tag).where(Tag.slug == slug))).first()
+        if existing_tag:
             raise ConflictError(f"Tag with name '{data.name}' already exists.")
         tag = Tag(name=data.name, slug=slug)
 
@@ -125,15 +132,18 @@ class TagService:
 
         if data.name and data.name.lower() != tag.name.lower():
             new_slug = slugify(data.name)
-            exists_tag = (
+            existing_tag = (
                 await db.exec(select(Tag).where(Tag.slug == new_slug))
             ).first()
-            if exists_tag and exists_tag.id != tag_id:
+            if existing_tag and existing_tag.id != tag_id:
                 raise ConflictError(f"Tag with name '{data.name}' already exists.")
             tag.name = data.name
             tag.slug = new_slug
 
-        tag.is_active = data.is_active if data.is_active is not None else tag.is_active
+        for item, value in data.model_dump(
+            exclude_unset=True, exclude={"name", "slug"}
+        ).items():
+            setattr(tag, item, value)
 
         await db.commit()
         return tag

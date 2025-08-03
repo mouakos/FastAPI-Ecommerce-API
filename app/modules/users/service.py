@@ -1,3 +1,4 @@
+from math import ceil
 from typing import Optional
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -63,10 +64,11 @@ class UserService:
         result = await db.exec(stmt)
         users = result.all()
         return PaginatedResponse[UserRead](
-            items=users,
             total=total,
             page=page,
-            page_size=page_size,
+            size=page_size,
+            pages=ceil(total / page_size) if total else 1,
+            items=users,
         )
 
     @staticmethod

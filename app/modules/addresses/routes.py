@@ -8,7 +8,7 @@ from app.modules.auth.dependencies import AccessToken, RoleChecker
 from .schemas import AddressCreate, AddressUpdate, AddressRead
 from .service import AddressService
 
-router = APIRouter(prefix="/api/v1/users", tags=["User Addresses"])
+router = APIRouter(prefix="/api/v1/users", tags=["Addresses"])
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 

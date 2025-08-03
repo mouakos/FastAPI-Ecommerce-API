@@ -1,4 +1,3 @@
-from datetime import datetime
 from math import ceil
 from typing import Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -7,16 +6,16 @@ from uuid import UUID
 from slugify import slugify
 
 
-from ...models.category import Category
-from ...exceptions import ConflictError, NotFoundError
-from ...utils.paginate import PaginatedResponse
+from app.models.category import Category
+from app.exceptions import ConflictError, NotFoundError
+from app.utils.paginate import PaginatedResponse
 from .schemas import CategoryCreate, CategoryRead, CategoryUpdate
 
 
 class CategoryService:
     @staticmethod
     async def list_categories(
-        db_session: AsyncSession,
+        db: AsyncSession,
         page: int,
         page_size: int,
         is_active: Optional[bool] = None,
@@ -25,7 +24,7 @@ class CategoryService:
         """
         Retrieve a paginated list of categories with optional search functionality.
         Args:
-            db_session (AsyncSession): The database session.
+            db (AsyncSession): The database session.
             page (int): The page number for pagination.
             page_size (int): The number of categories per page.
             is_active (Optional[bool]): Filter categories by active status.
@@ -33,7 +32,7 @@ class CategoryService:
         Returns:
             PaginatedResponse[CategoryRead]: A paginated response containing category data.
         """
-        # Get total count (without limit/offset)
+        # Get total count based on filters
         count_stmt = (
             select(func.count())
             .select_from(Category)
@@ -42,20 +41,21 @@ class CategoryService:
                 (Category.is_active == is_active) if is_active is not None else True,
             )
         )
-        total = (await db_session.exec(count_stmt)).one()
+        total = (await db.exec(count_stmt)).one()
 
         # Get paginated categories
-        result = await db_session.exec(
+        stmt = (
             select(Category)
             .where(
                 (Category.name.ilike(f"%{search}%")) if search else True,
                 (Category.is_active == is_active) if is_active is not None else True,
             )
-            .order_by(Category.created_at.desc())
+            .order_by(Category.name)
             .limit(page_size)
             .offset((page - 1) * page_size)
         )
-        categories = result.all()
+
+        categories = await db.exec(stmt)
 
         return PaginatedResponse[CategoryRead](
             total=total,
@@ -67,13 +67,13 @@ class CategoryService:
 
     @staticmethod
     async def get_category(
-        db_session: AsyncSession,
+        db: AsyncSession,
         category_id: UUID,
     ) -> Category:
         """Get a category by its ID.
 
         Args:
-            db_session (AsyncSession): The database session.
+            db (AsyncSession): The database session.
             category_id (UUID): The ID of the category to retrieve.
 
         Raises:
@@ -82,21 +82,19 @@ class CategoryService:
         Returns:
             CategoryRead | CategoryReadDetail: The category details, either with or without children.
         """
-        stmt = select(Category).where(Category.id == category_id)
-        result = await db_session.exec(stmt)
-        category = result.first()
+        category = await db.get(Category, category_id)
         if not category:
             raise NotFoundError(f"Category with ID {category_id} not found")
         return category
 
     @staticmethod
     async def create_category(
-        db_session: AsyncSession, category_data: CategoryCreate
+        db: AsyncSession, category_data: CategoryCreate
     ) -> CategoryRead:
         """Create a new category.
 
         Args:
-            db_session (AsyncSession): The database session.
+            db (AsyncSession): The database session.
             category_data (CategoryCreate): The category data to create.
 
         Raises:
@@ -107,28 +105,26 @@ class CategoryService:
         """
 
         slug = slugify(category_data.name)
-        exists = await db_session.exec(
-            select(Category).where(func.lower(Category.slug) == func.lower(slug))
-        )
-        if exists.first():
+        exists = await CategoryService._get_category_by_slug(db, slug)
+        if exists:
             raise ConflictError(
                 f"Category with name {category_data.name} already exists."
             )
 
         category = Category(**category_data.model_dump(), slug=slug)
-        db_session.add(category)
-        await db_session.commit()
-        await db_session.refresh(category)
+        db.add(category)
+        await db.commit()
+        await db.refresh(category)
         return CategoryRead(**category.model_dump())
 
     @staticmethod
     async def update_category(
-        db_session: AsyncSession, category_id: UUID, update_data: CategoryUpdate
+        db: AsyncSession, category_id: UUID, update_data: CategoryUpdate
     ) -> CategoryRead:
         """Update an existing category.
 
         Args:
-            db_session (AsyncSession): The database session.
+            db (AsyncSession): The database session.
             category_id (UUID): The ID of the category to update.
             update_data (CategoryUpdate): The updated category data.
 
@@ -139,18 +135,15 @@ class CategoryService:
         Returns:
             CategoryRead: The updated category details.
         """
-        category = await db_session.get(Category, category_id)
+        category = await db.get(Category, category_id)
         if not category:
             raise NotFoundError(f"Category with ID {category_id} not found")
 
         if update_data.name and update_data.name.lower() != category.name.lower():
             new_slug = slugify(update_data.name)
-            conflict = await db_session.exec(
-                select(Category)
-                .where(func.lower(Category.slug) == func.lower(new_slug))
-                .where(Category.id != category_id)
-            )
-            if conflict.first():
+            exists = await CategoryService._get_category_by_slug(db, new_slug)
+
+            if exists and exists.id != category_id:
                 raise ConflictError(f"Category with slug {new_slug} already exists.")
             category.slug = new_slug
 
@@ -158,10 +151,8 @@ class CategoryService:
         for field, value in update_data.model_dump(exclude_unset=True).items():
             setattr(category, field, value)
 
-        # TODO - Check if fields are actually changed
-        category.updated_at = datetime.utcnow()
-        await db_session.commit()
-        await db_session.refresh(category)
+        await db.commit()
+        await db.refresh(category)
         return CategoryRead(**category.model_dump())
 
     @staticmethod
@@ -186,3 +177,15 @@ class CategoryService:
 
         await db_session.delete(category)
         await db_session.commit()
+
+    @staticmethod
+    async def _get_category_by_slug(db: AsyncSession, slug: str) -> Optional[Category]:
+        """Get a category by its slug.
+        Args:
+            db (AsyncSession): The database session.
+            slug (str): The slug of the category to retrieve.
+        Returns:
+            Optional[Category]: The category if found, otherwise None.
+        """
+        result = await db.exec(select(Category).where(Category.slug == slug))
+        return result.first()

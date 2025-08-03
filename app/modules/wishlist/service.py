@@ -4,14 +4,14 @@ from sqlmodel import select
 
 from app.exceptions import NotFoundError
 from app.models.product import Product
-from app.models.user import User
 from app.models.wishlist import Wishlist, WishlistItem
+from app.modules.users.service import UserService
 from .schemas import WishlistRead, WishlistItemCreate, WishlistItemRead
 
 
 class WishlistService:
     @staticmethod
-    async def get_wishlist(db: AsyncSession, user_id: UUID) -> WishlistRead:
+    async def get_user_wishlist(db: AsyncSession, user_id: UUID) -> WishlistRead:
         """
         Get the user's wishlist with items.
         Args:
@@ -22,10 +22,10 @@ class WishlistService:
         Returns:
             WishlistRead: The user's wishlist with items.
         """
-        return await WishlistService._get_or_create_wishlist(db, user_id)
+        return await WishlistService._get_or_create_user_wishlist(db, user_id)
 
     @staticmethod
-    async def add_item(
+    async def add_item_to_user_wishlist(
         db: AsyncSession, user_id: UUID, data: WishlistItemCreate
     ) -> WishlistItemRead:
         """
@@ -40,11 +40,13 @@ class WishlistService:
             WishlistItemRead: The created or existing wishlist item.
         """
 
-        wishlist = await WishlistService._get_or_create_wishlist(db, user_id)
+        wishlist = await WishlistService._get_or_create_user_wishlist(db, user_id)
 
         product = await db.get(Product, data.product_id)
         if not product:
-            raise NotFoundError(f"Product with ID {data.product_id} not found")
+            raise NotFoundError(
+                f"Product with ID {data.product_id} not found in wishlist for user {user_id}"
+            )
 
         for item in wishlist.items:
             if item.product_id == product.id:
@@ -59,7 +61,9 @@ class WishlistService:
         return item
 
     @staticmethod
-    async def remove_item(db: AsyncSession, user_id: UUID, product_id: UUID) -> None:
+    async def remove_item_from_user_wishlist(
+        db: AsyncSession, user_id: UUID, product_id: UUID
+    ) -> None:
         """
         Remove an item from the user's wishlist.
         Args:
@@ -69,11 +73,13 @@ class WishlistService:
         Raise:
             ResourceNotFound: If the user or product does not exist.
         """
-        wishlist = await WishlistService._get_or_create_wishlist(db, user_id)
+        wishlist = await WishlistService._get_or_create_user_wishlist(db, user_id)
 
         product = await db.get(Product, product_id)
         if not product:
-            raise NotFoundError(f"Product with ID {product_id} not found")
+            raise NotFoundError(
+                f"Product with ID {product_id} not found in wishlist for user {user_id}"
+            )
 
         for item in wishlist.items:
             if item.product_id == product.id:
@@ -82,7 +88,7 @@ class WishlistService:
                 return
 
     @staticmethod
-    async def clear_wishlist(db: AsyncSession, user_id: UUID) -> None:
+    async def clear_user_wishlist(db: AsyncSession, user_id: UUID) -> None:
         """
         Remove all items from the user's wishlist.
         Args:
@@ -91,13 +97,13 @@ class WishlistService:
         Raise:
             ResourceNotFound: If the user does not exist.
         """
-        wishlist = await WishlistService._get_or_create_wishlist(db, user_id)
+        wishlist = await WishlistService._get_or_create_user_wishlist(db, user_id)
         for item in wishlist.items:
             await db.delete(item)
         await db.commit()
 
     @staticmethod
-    async def _get_or_create_wishlist(db: AsyncSession, user_id: UUID) -> Wishlist:
+    async def _get_or_create_user_wishlist(db: AsyncSession, user_id: UUID) -> Wishlist:
         """
         Get or create a wishlist for the user.
         Args:
@@ -108,15 +114,13 @@ class WishlistService:
         Returns:
             Wishlist: The user's wishlist.
         """
-        user = await db.get(User, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
+        user = await UserService.get_user(db, user_id)
 
-        result = await db.exec(select(Wishlist).where(Wishlist.user_id == user_id))
+        result = await db.exec(select(Wishlist).where(Wishlist.user_id == user.id))
         wishlist = result.first()
 
         if not wishlist:
-            wishlist = Wishlist(user_id=user_id)
+            wishlist = Wishlist(user_id=user.id)
             await db.add(wishlist)
             await db.commit()
         return wishlist

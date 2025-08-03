@@ -48,12 +48,12 @@ class UserService:
         )
         total = (await db.exec(stmt_count)).one()
 
-        query = select(User).where(
+        stmt = select(User).where(
             (User.role == role) if role else True,
             (User.is_active == is_active) if is_active is not None else True,
             (User.email.ilike(f"%{search}%")) if search else True,
         )
-        result = await db.exec(query)
+        result = await db.exec(stmt)
         users = result.all()
         return PaginatedResponse[UserRead](
             items=users[(page - 1) * page_size : page * page_size],

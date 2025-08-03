@@ -3,9 +3,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ...utils.paginate import PaginatedResponse
-from ...database.core import get_session
-from ..auth.dependencies import RoleChecker
+from app.utils.paginate import PaginatedResponse
+from app.database.core import get_session
+from app.modules.auth.dependencies import RoleChecker
 from .service import UserService
 from .schemas import (
     AdminUserUpdate,
@@ -33,7 +33,9 @@ async def get_all_users(
     page_size: int = Query(
         default=10, ge=1, le=100, description="Number of users per page"
     ),
-    role: Optional[Literal["admin", "customer"]] = Query(default=None, description="Filter by user role"),
+    role: Optional[Literal["admin", "customer"]] = Query(
+        default=None, description="Filter by user role"
+    ),
     is_active: Optional[bool] = Query(
         default=None, description="Filter by active status"
     ),
@@ -56,7 +58,7 @@ async def get_all_users(
     dependencies=[role_checker_admin],
 )
 async def get_user(db_session: DbSession, user_id: UUID) -> UserReadDetail:
-    return await UserService.get_user_by_id(db_session, user_id)
+    return await UserService.get_user(db_session, user_id)
 
 
 @router.patch(

@@ -22,7 +22,6 @@ class TagRead(TagBase):
     id: UUID = Field(..., description="Unique identifier of the tag")
     slug: str = Field(..., description="Slug for the tag, used in URLs")
     is_active: bool = Field(..., description="Indicates if the tag is active or not")
-    
 
 
 class TagReadDetail(TagRead):

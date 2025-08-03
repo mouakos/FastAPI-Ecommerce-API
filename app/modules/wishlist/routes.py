@@ -13,6 +13,7 @@ router = APIRouter(prefix="/api/v1/wishlists", tags=["Wishlists"])
 role_checker_admin = Depends(RoleChecker(["admin"]))
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
+
 # User endpoints
 @router.get("/", response_model=WishlistRead)
 async def get_my_wishlist(db: DbSession, token_data: AccessToken) -> WishlistRead:

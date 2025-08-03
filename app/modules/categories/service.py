@@ -12,6 +12,7 @@ from ...exceptions import ConflictError, NotFoundError
 from ...utils.paginate import PaginatedResponse
 from .schemas import CategoryCreate, CategoryRead, CategoryUpdate
 
+
 class CategoryService:
     @staticmethod
     async def list_categories(

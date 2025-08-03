@@ -35,7 +35,7 @@ class ProductRead(ProductCreate):
         default=True, description="Indicates if the product is active"
     )
     slug: str = Field(..., description="Slug of the product")
-    
+
 
 class ProductReadDetail(ProductBase):
     id: UUID = Field(..., description="Unique identifier of the product")

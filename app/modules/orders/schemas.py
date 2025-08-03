@@ -18,7 +18,7 @@ class OrderItemRead(OrderItemCreate):
     subtotal: float = Field(
         ..., description="Subtotal for the item (unit_price * quantity)"
     )
-   
+
 
 class OrderCreate(BaseModel):
     shipping_address_id: UUID = Field(

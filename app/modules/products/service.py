@@ -21,6 +21,7 @@ from .schemas import (
     ProductUpdate,
 )
 
+
 class ProductService:
     @staticmethod
     async def list_products(

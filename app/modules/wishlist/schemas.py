@@ -16,6 +16,7 @@ class WishlistItemRead(WishlistItemBase):
         ..., description="ID of the wishlist this item belongs to"
     )
 
+
 class WishlistRead(BaseModel):
     id: UUID = Field(..., description="Unique identifier of the wishlist")
     user_id: UUID = Field(..., description="ID of the user who owns the wishlist")

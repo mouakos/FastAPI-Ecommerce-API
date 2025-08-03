@@ -30,4 +30,3 @@ class CategoryRead(CategoryBase):
     id: UUID = Field(..., description="Unique identifier of the category")
     slug: str = Field(..., description="Slug of the category for URL usage")
     is_active: bool = Field(..., description="Indicates if the category is active")
-   

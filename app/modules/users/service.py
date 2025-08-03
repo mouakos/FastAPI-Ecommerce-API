@@ -3,10 +3,10 @@ from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
 
-from ...exceptions import BadRequestError, NotFoundError
-from ...utils.security import generate_password_hash, verify_password
-from ...models.user import User
-from ...utils.paginate import PaginatedResponse
+from app.exceptions import BadRequestError, NotFoundError
+from app.utils.security import get_password_hash, verify_password
+from app.models.user import User
+from app.utils.paginate import PaginatedResponse
 from .schemas import (
     PasswordUpdate,
     UserRead,
@@ -63,7 +63,7 @@ class UserService:
         )
 
     @staticmethod
-    async def get_user_by_id(db: AsyncSession, user_id: UUID) -> UserReadDetail:
+    async def get_user(db: AsyncSession, user_id: UUID) -> UserReadDetail:
         """Retrieve a user by their ID.
         Args:ng.
             db (AsyncSession): The database session.
@@ -78,19 +78,6 @@ class UserService:
         if not user:
             raise NotFoundError(f"User with ID {user_id} not found")
         return user
-
-    @staticmethod
-    async def get_user_by_email(db: AsyncSession, email: str) -> Optional[UserRead]:
-        """Retrieve a user by their email.
-
-        Args:
-            db (AsyncSession): The database session.
-            email (str): The email of the user.
-
-        Returns:
-            Optional[UserRead]: The user if found, otherwise None.
-        """
-        return (await db.exec(select(User).where(User.email == email))).first()
 
     @staticmethod
     async def update_user(
@@ -160,7 +147,7 @@ class UserService:
 
         # Verify current password
         if not verify_password(
-            generate_password_hash(password_data.current_password), user.password_hash
+            get_password_hash(password_data.current_password), user.password_hash
         ):
             raise BadRequestError("Invalid password.")
 
@@ -168,6 +155,6 @@ class UserService:
         if password_data.new_password != password_data.new_password_confirm:
             raise BadRequestError("New passwords do not match.")
 
-        user.password_hash = generate_password_hash(password_data.new_password)
+        user.password_hash = get_password_hash(password_data.new_password)
         await db.commit()
         return user

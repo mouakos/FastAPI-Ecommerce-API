@@ -11,7 +11,7 @@ from .schemas import ProductCreate, ProductRead, ProductReadDetail, ProductUpdat
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
-role_checker_admin = Depends(RoleChecker([U"admin"]))
+role_checker_admin = Depends(RoleChecker(["admin"]))
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 

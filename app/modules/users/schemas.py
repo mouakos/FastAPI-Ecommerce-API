@@ -3,10 +3,10 @@ from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr, Field
 from uuid import UUID
 
-from ..addresses.schemas import AddressRead
-from ..orders.schemas import OrderRead
-from ..reviews.schemas import ReviewRead
-from ..wishlist.schemas import WishlistRead
+from app.modules.addresses.schemas import AddressRead
+from app.modules.orders.schemas import OrderRead
+from app.modules.reviews.schemas import ReviewRead
+from app.modules.wishlist.schemas import WishlistRead
 
 
 class UserBase(BaseModel):
@@ -42,6 +42,7 @@ class UserRead(UserBase):
         default=True, description="Indicates if the user account is active"
     )
 
+
 class UserReadDetail(UserRead):
     addresses: Optional[list[AddressRead]] = Field(
         default_factory=list, description="List of addresses associated with the user"
@@ -71,7 +72,9 @@ class UserUpdate(BaseModel):
 
 
 class AdminUserUpdate(UserUpdate):
-    role: Optional[Literal["customer", "admin"]] = Field(None, description="Role of the user")
+    role: Optional[Literal["customer", "admin"]] = Field(
+        None, description="Role of the user"
+    )
     is_active: Optional[bool] = Field(
         None, description="Indicates if the user account is active"
     )

@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends, Query, status
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ...utils.paginate import PaginatedResponse
-from ...database.core import get_session
-from ..auth.dependencies import RoleChecker
+from app.utils.paginate import PaginatedResponse
+from app.database.core import get_session
+from app.modules.auth.dependencies import RoleChecker
 from .service import ProductService
 from .schemas import ProductCreate, ProductRead, ProductReadDetail, ProductUpdate
 
@@ -16,12 +16,7 @@ role_checker_admin = Depends(RoleChecker(["admin"]))
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
-# User endpoints
-@router.get(
-    "/{product_id}",
-    response_model=ProductReadDetail,
-    summary="Get product by ID",
-)
+@router.get("/{product_id}", response_model=ProductReadDetail)
 async def get_product(product_id: UUID, db_session: DbSession) -> ProductReadDetail:
     product = await ProductService.get_product(db_session, product_id)
     if not product.is_active:
@@ -31,11 +26,7 @@ async def get_product(product_id: UUID, db_session: DbSession) -> ProductReadDet
     return product
 
 
-@router.get(
-    "/",
-    response_model=list[ProductRead],
-    summary="List active products",
-)
+@router.get("/", response_model=list[ProductRead])
 async def list_products(
     db_session: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
@@ -48,28 +39,24 @@ async def list_products(
         db_session, page=page, page_size=page_size, search=search, is_active=True
     )
 
-
-# Admin endpoints
 @router.post(
-    "/admin/",
+    "/",
     response_model=ProductRead,
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new product (admin)",
     dependencies=[role_checker_admin],
 )
-async def admin_create_product(
+async def create_product(
     product_data: ProductCreate, db_session: DbSession
 ) -> ProductRead:
     return await ProductService.create_product(db_session, product_data)
 
 
 @router.get(
-    "/admin/",
+    "/all/",
     response_model=list[ProductRead],
-    summary="List all products (admin)",
     dependencies=[role_checker_admin],
 )
-async def admin_list_all_products(
+async def list_all_products(
     db_session: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
     page_size: int = Query(
@@ -86,20 +73,18 @@ async def admin_list_all_products(
 
 
 @router.patch(
-    "/admin/{product_id}",
+    "/{product_id}",
     response_model=ProductRead,
-    summary="Update an existing product (admin)",
     dependencies=[role_checker_admin],
 )
-async def admin_update_product(
+async def update_product(
     product_id: UUID, update_data: ProductUpdate, db_session: DbSession
 ) -> ProductRead:
     return await ProductService.update_product(db_session, product_id, update_data)
 
 
 @router.delete(
-    "/admin/{product_id}",
-    summary="Delete an existing product (admin)",
+    "/{product_id}",
     dependencies=[role_checker_admin],
     status_code=status.HTTP_204_NO_CONTENT,
 )

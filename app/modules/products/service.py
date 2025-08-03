@@ -3,17 +3,16 @@ from typing import Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
 from uuid import UUID
-from datetime import datetime
 from slugify import slugify
 
-from ...exceptions import NotFoundError, ConflictError
-from ...utils.paginate import PaginatedResponse
-from ...models.category import Category
-from ...models.product import Product
-from ...models.tag import Tag
-from ..categories.schemas import CategoryRead
-from ..reviews.schemas import ReviewRead
-from ..tags.schemas import TagRead
+from app.exceptions import NotFoundError, ConflictError
+from app.utils.paginate import PaginatedResponse
+from app.models.category import Category
+from app.models.product import Product
+from app.models.tag import Tag
+from app.modules.categories.schemas import CategoryRead
+from app.modules.reviews.schemas import ReviewRead
+from app.modules.tags.schemas import TagRead
 from .schemas import (
     ProductCreate,
     ProductRead,
@@ -61,7 +60,7 @@ class ProductService:
                 (Product.name.ilike(f"%{search}%")) if search else True,
                 (Product.is_active == is_active) if is_active is not None else True,
             )
-            .order_by(Product.created_at.desc())
+            .order_by(Product.name)
             .limit(page_size)
             .offset((page - 1) * page_size)
         )
@@ -229,12 +228,8 @@ class ProductService:
                 raise NotFoundError("One or more tags not found.")
             product.tags = tags
 
-        # TODO - Check if fields are actually changed
-        product.updated_at = datetime.utcnow()
-
         await db_session.commit()
-        await db_session.refresh(product)
-        return ProductRead(**product.model_dump(), tag_ids=data.tag_ids or [])
+        return product
 
     @staticmethod
     async def delete_product(db_session: AsyncSession, product_id: UUID) -> None:
@@ -247,8 +242,9 @@ class ProductService:
         Raises:
             NotFoundError: If the product does not exist.
         """
-        async with db_session.begin():
-            product = await db_session.get(Product, product_id)
-            if not product:
-                raise NotFoundError(f"Product with ID {product_id} not found.")
-            await db_session.delete(product)
+        
+        product = await db_session.get(Product, product_id)
+        if not product:
+            raise NotFoundError(f"Product with ID {product_id} not found.")
+        await db_session.delete(product)
+        await db_session.commit()

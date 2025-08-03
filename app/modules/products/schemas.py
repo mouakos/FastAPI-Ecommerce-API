@@ -2,9 +2,9 @@ from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, Field
 
-from ..categories.schemas import CategoryRead
-from ..reviews.schemas import ReviewRead
-from ..tags.schemas import TagRead
+from app.modules.categories.schemas import CategoryRead
+from app.modules.reviews.schemas import ReviewRead
+from app.modules.tags.schemas import TagRead
 
 
 class ProductBase(BaseModel):

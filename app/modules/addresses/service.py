@@ -64,7 +64,9 @@ class AddressService:
         result = await db.exec(stmt)
         address = result.first()
         if not address:
-            raise NotFoundError(f"Address with ID {address_id} not found")
+            raise NotFoundError(
+                f"Address with ID {address_id} not found for user {user_id}"
+            )
         return address
 
     @staticmethod
@@ -110,7 +112,9 @@ class AddressService:
         address = result.first()
 
         if not address:
-            raise NotFoundError(f"Address with ID {address_id} not found")
+            raise NotFoundError(
+                f"Address with ID {address_id} not found for user {user_id}"
+            )
 
         update_data = data.model_dump(exclude_unset=True)
 
@@ -152,7 +156,9 @@ class AddressService:
         result = await db.exec(stmt)
         address = result.first()
         if not address:
-            raise NotFoundError(f"Address with ID {address_id} not found")
+            raise NotFoundError(
+                f"Address with ID {address_id} not found for user {user_id}"
+            )
 
         await db.delete(address)
         await db.commit()

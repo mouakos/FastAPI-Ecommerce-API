@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from datetime import timedelta, datetime
@@ -26,9 +27,7 @@ class AuthService:
         Returns:
             TokenResponse: User login token.
         """
-        user = (
-            await db.exec(select(User).where(User.email == login_data.email))
-        ).first()
+        user = await AuthService.get_user_by_email(db, login_data.email)
         if not user or not verify_password(login_data.password, user.password_hash):
             raise AuthenticationError("Invalid email or password.")
 
@@ -49,9 +48,7 @@ class AuthService:
             UserRead: Created user.
         """
 
-        existing_user = await (
-            await db.exec(select(User).where(User.email == user_data.email))
-        ).first()
+        existing_user = await AuthService.get_user_by_email(db, user_data.email)
         if existing_user:
             raise ConflictError(f"User with email {user_data.email} already exists.")
 
@@ -110,3 +107,18 @@ class AuthService:
             refresh_token=refresh_token,
             access_token_expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_SECONDS,
         )
+
+    @staticmethod
+    async def get_user_by_email(db: AsyncSession, email: str) -> Optional[UserRead]:
+        """
+        Get user by email.
+
+        Args:
+            db (AsyncSession): Database session.
+            email (str): User email.
+
+        Returns:
+            UserRead: User data or None if not found.
+        """
+        user = (await db.exec(select(User).where(User.email == email))).first()
+        return user

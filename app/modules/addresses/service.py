@@ -4,12 +4,13 @@ from sqlmodel import select, update
 
 from app.exceptions import NotFoundError
 from app.models.address import Address
+from app.modules.users.service import UserService
 from .schemas import AddressCreate, AddressRead, AddressUpdate
 
 
 class AddressService:
     @staticmethod
-    async def create_address(
+    async def create_user_address(
         db: AsyncSession, user_id: UUID, data: AddressCreate
     ) -> AddressRead:
         """Create a new address for a user.
@@ -39,10 +40,10 @@ class AddressService:
         return address
 
     @staticmethod
-    async def get_address(
+    async def get_user_address(
         db: AsyncSession, user_id: UUID, address_id: UUID
     ) -> AddressRead:
-        """Get an address by its ID.
+        """Get an address by its ID for a specific user.
 
         Args:
             db (AsyncSession): The database session.
@@ -55,12 +56,10 @@ class AddressService:
         Returns:
             AddressRead: The retrieved address.
         """
-        user = await db.get(Address, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
+        user = await UserService.get_user(db, user_id)
 
         stmt = select(Address).where(
-            Address.id == address_id, Address.user_id == user_id
+            Address.id == address_id, Address.user_id == user.id
         )
         result = await db.exec(stmt)
         address = result.first()
@@ -85,10 +84,10 @@ class AddressService:
         return result.all()
 
     @staticmethod
-    async def update_address(
+    async def update_user_address(
         db: AsyncSession, user_id: UUID, address_id: UUID, data: AddressUpdate
     ) -> AddressRead:
-        """Update an existing address.
+        """Update an existing address for a user.
 
         Args:
             db (AsyncSession): The database session.
@@ -102,12 +101,10 @@ class AddressService:
         Returns:
             AddressRead: The updated address.
         """
-        user = await db.get(Address, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
+        user = await UserService.get_user(db, user_id)
 
         stmt = select(Address).where(
-            Address.id == address_id, Address.user_id == user_id
+            Address.id == address_id, Address.user_id == user.id
         )
         result = await db.exec(stmt)
         address = result.first()
@@ -134,8 +131,10 @@ class AddressService:
         return address
 
     @staticmethod
-    async def delete_address(db: AsyncSession, user_id: UUID, address_id: UUID) -> None:
-        """Delete an address by its ID.
+    async def delete_user_address(
+        db: AsyncSession, user_id: UUID, address_id: UUID
+    ) -> None:
+        """Delete an address by its ID for a specific user.
 
         Args:
             db (AsyncSession): The database session.
@@ -146,12 +145,9 @@ class AddressService:
             NotFoundError: If the user or address is not found.
         """
 
-        user = await db.get(Address, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
-
+        user = await UserService.get_user(db, user_id)
         stmt = select(Address).where(
-            Address.id == address_id, Address.user_id == user_id
+            Address.id == address_id, Address.user_id == user.id
         )
         result = await db.exec(stmt)
         address = result.first()

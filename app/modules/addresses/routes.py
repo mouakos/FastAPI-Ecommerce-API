@@ -8,7 +8,7 @@ from app.modules.auth.dependencies import AccessToken, RoleChecker
 from .schemas import AddressCreate, AddressUpdate, AddressRead
 from .service import AddressService
 
-router = APIRouter(prefix="/api/v1/users", tags=["Addresses"])
+router = APIRouter(prefix="/api/v1/users", tags=["User Addresses"])
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
@@ -19,7 +19,7 @@ async def create_my_address(
     db: DbSession,
     token_data: AccessToken,
 ):
-    return await AddressService.create_address(db, token_data.get_uuid(), data)
+    return await AddressService.create_user_address(db, token_data.get_uuid(), data)
 
 
 @router.get("/me/addresses", response_model=List[AddressRead])
@@ -36,7 +36,7 @@ async def get_my_address(
     db: DbSession,
     token_data: AccessToken,
 ):
-    address = await AddressService.get_address(db, token_data.get_uuid(), address_id)
+    address = await AddressService.get_user_address(db, token_data.get_uuid(), address_id)
     return address
 
 
@@ -47,7 +47,7 @@ async def update_my_address(
     db: DbSession,
     token_data: AccessToken,
 ):
-    return await AddressService.update_address(db, token_data.get_uuid(), address_id, data)
+    return await AddressService.update_user_address(db, token_data.get_uuid(), address_id, data)
 
 @router.delete("/me/addresses/{address_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_my_address(
@@ -55,16 +55,27 @@ async def delete_my_address(
     db: DbSession,
     token_data: AccessToken,
 ):
-    await AddressService.delete_address(db, token_data.get_uuid(), address_id)
+    await AddressService.delete_user_address(db, token_data.get_uuid(), address_id)
 
 
 # Admin endpoints
 role_checker_admin = Depends(RoleChecker(["admin"]))
-admin_router = APIRouter(prefix="/api/v1/admin/users/", tags=["Admin User Addresses"])
+
+@router.post(
+    "/{user_id}/addresses",
+    response_model=AddressRead,
+    dependencies=[role_checker_admin],
+)
+async def create_address(
+    user_id: UUID,
+    data: AddressCreate,
+    db: DbSession,
+):
+    return await AddressService.create_user_address(db, user_id, data)
 
 
-@admin_router.get(
-    "/",
+@router.get(
+    "/{user_id}/addresses",
     response_model=List[AddressRead],
     dependencies=[role_checker_admin],
 )
@@ -75,7 +86,7 @@ async def list_addresses_by_user(
     return await AddressService.list_addresses_by_user(db, user_id)
 
 
-@admin_router.get(
+@router.get(
     "/{user_id}/addresses/{address_id}", response_model=AddressRead, dependencies=[role_checker_admin]
 )
 async def get_address(
@@ -83,10 +94,10 @@ async def get_address(
     address_id: UUID,
     db: DbSession,
 ):
-    return await AddressService.get_address(db, user_id, address_id)
+    return await AddressService.get_user_address(db, user_id, address_id)
 
 
-@admin_router.patch(
+@router.patch(
     "/{user_id}/addresses/{address_id}", response_model=AddressRead, dependencies=[role_checker_admin]
 )
 async def update_address(
@@ -95,10 +106,10 @@ async def update_address(
     data: AddressUpdate,
     db: DbSession,
 ):
-    return await AddressService.update_address(db, user_id, address_id, data)
+    return await AddressService.update_user_address(db, user_id, address_id, data)
 
 
-@admin_router.delete(
+@router.delete(
     "/{user_id}/addresses/{address_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[role_checker_admin],
@@ -108,4 +119,4 @@ async def delete_address(
     address_id: UUID,
     db: DbSession,
 ):
-    await AddressService.delete_address(db, user_id, address_id)
+    await AddressService.delete_user_address(db, user_id, address_id)

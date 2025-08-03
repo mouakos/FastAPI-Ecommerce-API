@@ -12,7 +12,7 @@ from .dependencies import AccessToken, RefreshTokenBearer
 from .schemas import TokenData, UserLogin, TokenResponse
 
 
-router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
+router = APIRouter(prefix="/api/v1/auth", tags=["User Authentication"])
 
 refresh_token_bearer = RefreshTokenBearer()
 DbSession = Annotated[AsyncSession, Depends(get_session)]

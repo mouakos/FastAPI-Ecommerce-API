@@ -13,7 +13,7 @@ from app.modules.users.schemas import (
 from app.modules.users.service import UserService
 
 
-router = APIRouter(prefix="/api/v1/users/me", tags=["Accounts"])
+router = APIRouter(prefix="/api/v1/users/me", tags=["User Accounts"])
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 

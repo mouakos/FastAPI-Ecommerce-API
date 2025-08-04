@@ -2,9 +2,8 @@ from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 
-from app.exceptions import NotFoundError
-from app.models.product import Product
 from app.models.wishlist import Wishlist, WishlistItem
+from app.modules.products.service import ProductService
 from app.modules.users.service import UserService
 from .schemas import WishlistRead, WishlistItemCreate, WishlistItemRead
 
@@ -42,11 +41,7 @@ class WishlistService:
 
         wishlist = await WishlistService._get_or_create_user_wishlist(db, user_id)
 
-        product = await db.get(Product, data.product_id)
-        if not product:
-            raise NotFoundError(
-                f"Product with ID {data.product_id} not found in wishlist for user {user_id}"
-            )
+        product = await ProductService.get_product(db, data.product_id)
 
         for item in wishlist.items:
             if item.product_id == product.id:
@@ -75,12 +70,7 @@ class WishlistService:
         """
         wishlist = await WishlistService._get_or_create_user_wishlist(db, user_id)
 
-        product = await db.get(Product, product_id)
-        if not product:
-            raise NotFoundError(
-                f"Product with ID {product_id} not found in wishlist for user {user_id}"
-            )
-
+        product = await ProductService.get_product(db, product_id)
         for item in wishlist.items:
             if item.product_id == product.id:
                 await db.delete(item)

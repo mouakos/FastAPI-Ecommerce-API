@@ -13,7 +13,7 @@ class Review(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     rating: int = Field(ge=1, le=5, nullable=False)
     comment: Optional[str] = Field(default=None)
-    is_published: bool = Field(default=True, nullable=False)
+    is_published: bool = Field(default=False, nullable=False)
 
     # Relationship with product - many-to-one
     product_id: UUID = Field(foreign_key="products.id", nullable=False)

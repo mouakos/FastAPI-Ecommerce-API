@@ -4,18 +4,22 @@ from sqlmodel import select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
 
-from ...models.product import Product
-from ...models.review import Review
-from ...models.user import User
-from ...exceptions import ConflictError, NotFoundError
-from ...utils.paginate import PaginatedResponse
+from app.models.product import Product
+from app.models.review import Review
+from app.exceptions import AuthorizationError, ConflictError, NotFoundError
+from app.modules.products.service import ProductService
+from app.modules.users.service import UserService
+from app.utils.paginate import PaginatedResponse
 from .schemas import AdminReviewUpdate, ReviewCreate, ReviewRead, ReviewUpdate
 
 
 class ReviewService:
     @staticmethod
-    async def create_review(
-        db: AsyncSession, data: ReviewCreate, user_id: UUID, product_id: UUID
+    async def create_product_review(
+        db: AsyncSession,
+        user_id: UUID,
+        product_id: UUID,
+        data: ReviewCreate,
     ) -> ReviewRead:
         """
         Create a new review for a product.
@@ -26,62 +30,67 @@ class ReviewService:
             user_id (UUID): ID of the user writing the review.
 
         Raises:
-            ResourceNotFoundError: If the user or product does not exist.
+            NotFoundError: If the user or product does not exist.
 
         Returns:
             ReviewRead: The newly created review.
         """
-        user = await db.get(User, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
+        user = await UserService.get_user(db, user_id)
 
         product = await db.get(Product, product_id)
         if not product:
             raise NotFoundError(f"Product with ID {product_id} not found")
 
         stmt = select(Review).where(
-            Review.user_id == user_id, Review.product_id == product_id
+            Review.user_id == user.id, Review.product_id == product.id
         )
         existing_review = (await db.exec(stmt)).first()
 
         if existing_review:
             raise ConflictError(
-                f"Review by user {user_id} for product {product_id} already exists"
+                f"Review by user {user.id} for product {product_id} already exists"
             )
 
+        product.rating = await ReviewService._get_product_avg_rating(db, product)
         review = Review(
             rating=data.rating,
             comment=data.comment,
-            product_id=product_id,
+            product=product,
             user_id=user_id,
         )
 
         review = await db.add(review)
         await db.commit()
-
-        # Update product rating after adding a new review
-        await ReviewService.update_product_avg_rating(db, product)
-
         return review
 
     @staticmethod
-    async def get_review(db: AsyncSession, review_id: UUID) -> ReviewRead:
+    async def get_product_review(
+        db: AsyncSession, product_id: UUID, review_id: UUID
+    ) -> ReviewRead:
         """
-        Retrieve a review by its ID.
+        Retrieve a review by its ID for a specific product.
 
         Args:
             db (AsyncSession): The database session.
+            product_id (UUID): Product ID.
             review_id (UUID): Review ID.
 
         Raises:
-            ResourceNotFoundError: If no review is found with the given ID.
+            NotFoundError: If the product or review does not exist.
 
         Returns:
             ReviewRead: The requested review.
         """
-        review = await db.get(Review, review_id)
+        product = await ProductService.get_product(db, product_id)
+        stmt = select(Review).where(
+            Review.id == review_id, Review.product_id == product.id
+        )
+        review = (await db.exec(stmt)).first()
         if not review:
-            raise NotFoundError(f"Review with ID {review_id} not found")
+            raise NotFoundError(
+                f"Review with ID {review_id} for product {product_id} not found"
+            )
+
         return review
 
     @staticmethod
@@ -141,7 +150,6 @@ class ReviewService:
                 if is_published is not None
                 else True,
             )
-            .order_by(Review.created_at.desc())
             .limit(size)
             .offset((page - 1) * size)
         )
@@ -156,106 +164,171 @@ class ReviewService:
         )
 
     @staticmethod
-    async def update_review(
-        db: AsyncSession, review_id: UUID, data: ReviewUpdate
+    async def update_product_review(
+        db: AsyncSession,
+        user_id: UUID,
+        product_id: UUID,
+        review_id: UUID,
+        data: ReviewUpdate,
     ) -> ReviewRead:
         """
-        Update an existing review.
+        Update an existing review for a product.
 
         Args:
             db (AsyncSession): The database session.
+            user_id (UUID): User ID.
+            product_id (UUID): Product ID.
             review_id (UUID): Review ID.
             data (ReviewUpdate): Updated review data.
 
         Raises:
-            NotFoundError: If the review  does not exist.
+            NotFoundError: If the user, product, or review does not exist.
+            AuthorizationError: If the user does not have permission to update the review.
 
         Returns:
             ReviewRead: The updated review.
         """
-
-        review = await db.get(Review, review_id)
+        user = await UserService.get_user(db, user_id)
+        product = await ProductService.get_product(db, product_id)
+        stmt = select(Review).where(
+            Review.id == review_id,
+            Review.user_id == user.id,
+            Review.product_id == product.id,
+        )
+        review = (await db.exec(stmt)).first()
         if not review:
-            raise NotFoundError(f"Review with ID {review_id} not found")
+            raise NotFoundError(
+                f"Review with ID {review_id} not found for product {product_id}"
+            )
+
+        if review.user_id != user.id:
+            raise AuthorizationError(
+                "You do not have permission to update this review."
+            )
 
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(review, key, value)
 
-        db.add(review)
         await db.commit()
-
-        # Update product rating after updating a review
-        await ReviewService.update_product_avg_rating(db, review.product)
-
+        await ReviewService._update_product_avg_rating(db, product_id)
         return review
 
     @staticmethod
-    async def change_review_visibility(
-        db: AsyncSession, review_id: UUID, data: AdminReviewUpdate
+    async def change_product_review_visibility(
+        db: AsyncSession,
+        user_id: UUID,
+        product_id: UUID,
+        review_id: UUID,
+        data: AdminReviewUpdate,
     ) -> ReviewRead:
         """
-        Change the visibility of a review.
+        Change the visibility of a review for a product.
 
         Args:
             db (AsyncSession): The database session.
+            user_id (UUID): User ID of the admin.
+            product_id (UUID): Product ID.
             review_id (UUID): Review ID.
             data (AdminReviewUpdate): Updated visibility data.
 
         Raises:
-            NotFoundError: If the user review does not exist.
+            NotFoundError: If the user, product, or review does not exist.
 
         Returns:
             ReviewRead: The updated review with new visibility status.
         """
-        review = await db.get(Review, review_id)
+        user = await UserService.get_user(db, user_id)
+
+        product = await ProductService.get_product(db, product_id)
+
+        stmt = select(Review).where(
+            Review.user_id == user.id,
+            Review.product_id == product.id,
+        )
+        review = (await db.exec(stmt)).first()
         if not review:
-            raise NotFoundError(f"Review with ID {review_id} not found")
+            raise NotFoundError(
+                f"Review with ID {review_id} not found for product {product_id}"
+            )
 
-        review.is_published = data.is_published
-
-        db.add(review)
-        await db.commit()
+        if review.is_published != data.is_published:
+            review.is_published = data.is_published
+            await db.commit()
 
         return review
 
     @staticmethod
-    async def delete_review(db: AsyncSession, review_id: UUID) -> None:
+    async def delete_product_review(
+        db: AsyncSession,
+        user_id: UUID,
+        product_id: UUID,
+        review_id: UUID,
+    ) -> None:
         """
         Delete a review by its ID.
 
         Args:
             db (AsyncSession): The database session.
             review_id (UUID): Review ID.
-    
+
         Raises:
-            NotFoundError: If the user or review does not exist.
+            NotFoundError: If the user, product, or review does not exist.
+            AuthorizationError: If the user does not have permission to delete the review.
         """
-        review = await db.get(Review, review_id)
+        user = await UserService.get_user(db, user_id)
+        product = await ProductService.get_product(db, product_id)
+        stmt = select(Review).where(
+            Review.user_id == user.id,
+            Review.product_id == product.id,
+        )
+        review = (await db.exec(stmt)).first()
         if not review:
-            raise NotFoundError(f"Review with ID {review_id} not found")
+            raise NotFoundError(
+                f"Review with ID {review_id} not found for product {product_id}"
+            )
+
+        if review.user_id != user.id and user.role != "admin":
+            raise AuthorizationError(
+                "You do not have permission to delete this review."
+            )
 
         await db.delete(review)
         await db.commit()
-
-        # Update product rating after deleting a review
-        await ReviewService.update_product_avg_rating(db, review.product)
+        await ReviewService._update_product_avg_rating(db, product_id)
 
     @staticmethod
-    async def update_product_avg_rating(db: AsyncSession, product: Product) -> float:
+    async def _update_product_avg_rating(db: AsyncSession, product_id: UUID) -> None:
         """
-        Update the average rating of a product based on its reviews.
+        Update the average rating of a product after a review is deleted.
+
         Args:
             db (AsyncSession): The database session.
-            product (Product): The product to update.
-        Returns:
-            float: The new average rating.
-        """
-        result = await db.exec(
-            select(func.avg(Review.rating)).where(Review.product_id == product.id)
-        )
+            product_id (UUID): Product ID.
+            old_rating (float): The rating to be removed from the average.
+        Raises:
+            NotFoundError: If the product does not exist.
 
-        avg_rating = result.first() or 0.0
-        product.rating = round(avg_rating, 2)
-        db.add(product)
+        Returns:
+            None
+        """
+        stmt = select(Review).where(Review.product_id == product_id)
+        reviews = (await db.exec(stmt)).all()
+
+        product = await db.get(Product, product_id)
+        if not product:
+            raise NotFoundError(f"Product with ID {product_id} not found")
+
+        if not reviews:
+            product.rating = 0.0
+            return
+
+        total_rating = sum(review.rating for review in reviews if review.is_published)
+        count = len([review for review in reviews if review.is_published])
+
+        if count == 0:
+            product.rating = 0.0
+        else:
+            product.rating = total_rating / count
+
         await db.commit()

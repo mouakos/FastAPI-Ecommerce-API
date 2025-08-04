@@ -10,23 +10,22 @@ from .schemas import CartItemCreate, CartItemRead, CartItemUpdate, CartRead
 from .service import CartService
 
 
-router = APIRouter(prefix="/api/v1/cart", tags=["Carts"])
+router = APIRouter(prefix="/api/v1/users", tags=["Cart"])
 role_checker_admin = Depends(RoleChecker(["admin"]))
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
-# User endpoints
-@router.get("/me", response_model=list[CartRead])
+@router.get("/me/cart", response_model=list[CartRead])
 async def get_my_cart(
     db: DbSession,
     token_data: AccessToken,
 ):
-    return await CartService.get_cart(db, UUID(token_data.sub))
+    return await CartService.get_cart(db, token_data.get_uuid())
 
 
 @router.post(
-    "/items",
+    "/me/cart/items",
     response_model=CartItemRead,
     status_code=status.HTTP_201_CREATED,
 )
@@ -35,51 +34,38 @@ async def add_item_to_my_cart(
     db: DbSession,
     token_data: AccessToken,
 ):
-    return await CartService.add_item(db, UUID(token_data.sub), data)
+    return await CartService.add_item(db, token_data.get_uuid(), data)
 
 
-@router.patch(
-    "/items/{item_id}",
-    response_model=CartItemRead,
-    summary="Update cart item quantity",
-)
+@router.patch("/me/cart/items/{item_id}", response_model=CartItemRead)
 async def update_item_in_my_cart(
     item_id: UUID,
     data: CartItemUpdate,
     db: DbSession,
     token_data: AccessToken,
 ):
-    return await CartService.update_item(db, UUID(token_data.sub), item_id, data)
+    return await CartService.update_item(db, token_data.get_uuid(), item_id, data)
 
 
-@router.delete(
-    "/items/{item_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Remove item from my cart",
-)
+@router.delete("/me/cart/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_item_from_my_cart(
     item_id: UUID,
     db: DbSession,
     token_data: AccessToken,
 ):
-    await CartService.remove_item(db, UUID(token_data.sub), item_id)
+    await CartService.remove_item(db, token_data.get_uuid(), item_id)
 
 
-@router.delete(
-    "/clear",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Clear my cart",
-)
+@router.delete("/me/cart/clear", status_code=status.HTTP_204_NO_CONTENT)
 async def clear_my_cart(
     db: DbSession,
     token_data: AccessToken,
 ):
-    await CartService.clear_cart(db, UUID(token_data.sub))
+    await CartService.clear_cart(db, token_data.get_uuid())
 
 
-# Admin endpoints
 @router.get(
-    "/users/{user_id}",
+    "/{user_id}/cart",
     response_model=list[CartRead],
     dependencies=[role_checker_admin],
 )

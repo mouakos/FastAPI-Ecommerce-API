@@ -4,8 +4,9 @@ from sqlmodel import select
 
 from app.exceptions import ConflictError, NotFoundError
 from app.models.cart import Cart, CartItem
-from app.models.product import Product
-from .schemas import CartItemCreate, CartItemRead, CartItemUpdate, CartRead
+from app.modules.products.service import ProductService
+from app.modules.users.service import UserService
+from .schemas import CartItemCreate, CartItemUpdate, CartRead
 
 
 class CartService:
@@ -21,13 +22,7 @@ class CartService:
             Cart: The user's cart.
         """
         cart = await CartService._get_or_create_cart(db, user_id)
-
-        return CartRead(
-            id=cart.id,
-            user_id=cart.user_id,
-            items=[CartItemRead(**cart_item.model_dump()) for cart_item in cart.items],
-            total_amount=sum(item.subtotal for item in cart.items),
-        )
+        return cart
 
     @staticmethod
     async def add_item(
@@ -47,10 +42,7 @@ class CartService:
             CartItem: The created cart item.
         """
         cart = await CartService._get_or_create_cart(db, user_id)
-        product = await db.get(Product, data.product_id)
-
-        if not product:
-            raise NotFoundError(f"Product with ID {data.product_id} not found")
+        product = await ProductService.get_product(db, data.product_id)
 
         if data.quantity > product.stock:
             raise ConflictError("Requested quantity exceeds available stock")
@@ -72,6 +64,8 @@ class CartService:
                 unit_price=product.price,
                 subtotal=product.price * data.quantity,
             )
+
+        cart.total_amount += item.subtotal
 
         db.add(item)
         await db.commit()
@@ -110,10 +104,10 @@ class CartService:
         if data.quantity > item.product.stock:
             raise ConflictError("Requested quantity exceeds available stock")
 
+        old_subtotal = item.subtotal
         item.quantity = data.quantity
         item.subtotal = item.unit_price * item.quantity
-
-        # TODO: update updated_at field for cart and cart item
+        cart.total_amount += item.subtotal - old_subtotal
 
         db.add(item)
         await db.commit()
@@ -145,7 +139,7 @@ class CartService:
         if not item:
             raise NotFoundError(f"Item with ID {item_id} not found")
 
-        # TODO: update updated_at field for cart
+        cart.total_amount -= item.subtotal
 
         await db.delete(item)
         await db.commit()
@@ -166,7 +160,7 @@ class CartService:
         for item in cart.items:
             await db.delete(item)
 
-        # TODO: update updated_at field for cart
+        cart.total_amount = 0
 
         await db.commit()
 
@@ -182,11 +176,9 @@ class CartService:
         Returns:
             Cart: The user's cart.
         """
-        user = await db.get(Cart, user_id)
-        if not user:
-            raise NotFoundError(f"User with ID {user_id} not found")
+        user = await UserService.get_user(db, user_id)
 
-        stmt = select(Cart).where(Cart.user_id == user_id)
+        stmt = select(Cart).where(Cart.user_id == user.id)
         result = await db.exec(stmt)
         cart = result.first()
         if cart:

@@ -172,11 +172,6 @@ class CategoryService:
         if not category:
             raise NotFoundError(f"Category with ID {category_id} not found")
 
-        if category.products:
-            raise ConflictError(
-                f"Category with ID {category_id} has associated products."
-            )
-
         await db_session.delete(category)
         await db_session.commit()
 

@@ -18,7 +18,7 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 @router.get("/", response_model=PaginatedResponse[CategoryRead])
 async def list_active_categories(
-    db_session: DbSession,
+    db: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
     page_size: int = Query(
         default=10, ge=1, le=100, description="Number of categories per page"
@@ -26,16 +26,16 @@ async def list_active_categories(
     search: Optional[str] = Query(default="", description="Search categories by name"),
 ) -> PaginatedResponse[CategoryRead]:
     return await CategoryService.list_categories(
-        db_session, page=page, page_size=page_size, search=search, is_active=True
+        db, page=page, page_size=page_size, search=search, is_active=True
     )
 
 
 @router.get("/{category_id}", response_model=CategoryRead)
 async def get_category(
-    db_session: DbSession,
+    db: DbSession,
     category_id: UUID,
 ):
-    category = await CategoryService.get_category(db_session, category_id)
+    category = await CategoryService.get_category(db, category_id)
     if not category.is_active:
         # Hide inactive categories from normal users
         from fastapi import HTTPException
@@ -50,7 +50,7 @@ async def get_category(
     dependencies=[role_checker_admin],
 )
 async def list_all_categories(
-    db_session: DbSession,
+    db: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
     page_size: int = Query(
         default=10, ge=1, le=100, description="Number of categories per page"
@@ -61,7 +61,7 @@ async def list_all_categories(
     search: Optional[str] = Query(default="", description="Search categories by name"),
 ) -> PaginatedResponse[CategoryRead]:
     return await CategoryService.list_categories(
-        db_session, page=page, page_size=page_size, search=search, is_active=is_active
+        db, page=page, page_size=page_size, search=search, is_active=is_active
     )
 
 
@@ -72,10 +72,10 @@ async def list_all_categories(
     dependencies=[role_checker_admin],
 )
 async def create_category(
-    db_session: DbSession,
+    db: DbSession,
     category_data: CategoryCreate,
 ):
-    return await CategoryService.create_category(db_session, category_data)
+    return await CategoryService.create_category(db, category_data)
 
 
 @router.patch(
@@ -84,11 +84,11 @@ async def create_category(
     dependencies=[role_checker_admin],
 )
 async def update_category(
-    db_session: DbSession,
+    db: DbSession,
     category_id: UUID,
     update_data: CategoryUpdate,
 ):
-    return await CategoryService.update_category(db_session, category_id, update_data)
+    return await CategoryService.update_category(db, category_id, update_data)
 
 
 @router.delete(
@@ -96,5 +96,5 @@ async def update_category(
     dependencies=[role_checker_admin],
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_category(db_session: DbSession, category_id: UUID) -> None:
-    await CategoryService.delete_category(db_session, category_id)
+async def delete_category(db: DbSession, category_id: UUID) -> None:
+    await CategoryService.delete_category(db, category_id)

@@ -24,10 +24,6 @@ class ProductCreate(ProductBase):
     category_id: UUID = Field(
         ..., description="ID of the category this product belongs to"
     )
-    tag_ids: Optional[list[UUID]] = Field(
-        default_factory=list, description="List of tag IDs associated with the product"
-    )
-
 
 class ProductRead(ProductCreate):
     id: UUID = Field(..., description="Unique identifier of the product")
@@ -72,7 +68,4 @@ class ProductUpdate(BaseModel):
     )
     category_id: Optional[UUID] = Field(
         None, description="ID of the category this product belongs to"
-    )
-    tag_ids: Optional[list[UUID]] = Field(
-        default_factory=list, description="List of tag IDs associated with the product"
     )

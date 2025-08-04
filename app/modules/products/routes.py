@@ -33,11 +33,26 @@ async def list_products(
     page_size: int = Query(
         default=10, ge=1, le=100, description="Number of products per page"
     ),
-    search: Optional[str] = Query(default="", description="Search products by name"),
+    min_price: Optional[float] = Query(
+        default=0, ge=0, description="Minimum product price"
+    ),
+    max_price: Optional[float] = Query(
+        default=0, ge=0, description="Maximum product price"
+    ),
+    brand: Optional[str] = Query(default="", description="Filter products by brand"),
+    name: Optional[str] = Query(default="", description="Search products by name"),
 ) -> PaginatedResponse[ProductRead]:
     return await ProductService.list_products(
-        db_session, page=page, page_size=page_size, search=search, is_active=True
+        db_session,
+        page=page,
+        page_size=page_size,
+        name=name,
+        brand=brand,
+        is_active=True,
+        min_price=min_price,
+        max_price=max_price,
     )
+
 
 @router.post(
     "/",
@@ -62,13 +77,27 @@ async def list_all_products(
     page_size: int = Query(
         default=10, ge=1, le=100, description="Number of products per page"
     ),
-    search: Optional[str] = Query(default="", description="Search products by name"),
+    min_price: Optional[float] = Query(
+        default=0, ge=0, description="Minimum product price"
+    ),
+    max_price: Optional[float] = Query(
+        default=0, ge=0, description="Maximum product price"
+    ),
+    brand: Optional[str] = Query(default="", description="Filter products by brand"),
+    name: Optional[str] = Query(default="", description="Search products by name"),
     is_active: Optional[bool] = Query(
         default=None, description="Filter by active status"
     ),
 ) -> PaginatedResponse[ProductRead]:
     return await ProductService.list_products(
-        db_session, page=page, page_size=page_size, search=search, is_active=is_active
+        db_session,
+        page=page,
+        page_size=page_size,
+        name=name,
+        brand=brand,
+        is_active=is_active,
+        min_price=min_price,
+        max_price=max_price,
     )
 
 

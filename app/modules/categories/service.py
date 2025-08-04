@@ -158,22 +158,22 @@ class CategoryService:
         return CategoryRead(**category.model_dump())
 
     @staticmethod
-    async def delete_category(db_session: AsyncSession, category_id: UUID) -> None:
+    async def delete_category(db: AsyncSession, category_id: UUID) -> None:
         """Delete a category by its ID.
         Args:
-            db_session (AsyncSession): The database session.
+            db (AsyncSession): The database session.
             category_id (UUID): The ID of the category to delete.
         Raises:
             CategoryNotFound: If the category is not found.
             CategoryHasProducts: If the category has associated products.
         """
-        category = await db_session.get(Category, category_id)
+        category = await db.get(Category, category_id)
 
         if not category:
             raise NotFoundError(f"Category with ID {category_id} not found")
 
-        await db_session.delete(category)
-        await db_session.commit()
+        await db.delete(category)
+        await db.commit()
 
     @staticmethod
     async def _get_category_by_slug(db: AsyncSession, slug: str) -> Optional[Category]:

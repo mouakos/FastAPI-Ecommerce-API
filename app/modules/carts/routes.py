@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from uuid import UUID
 from typing import Annotated
-
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database.core import get_session

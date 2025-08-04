@@ -23,7 +23,7 @@ async def list_active_categories(
     page_size: int = Query(
         default=10, ge=1, le=100, description="Number of categories per page"
     ),
-    name: Optional[str] = Query(default="", description="Search categories by name"),
+    name: Optional[str] = Query(default=None, description="Search categories by name"),
 ) -> PaginatedResponse[CategoryRead]:
     return await CategoryService.list_categories(
         db, page=page, page_size=page_size, name=name, is_active=True
@@ -52,7 +52,7 @@ async def list_all_categories(
     is_active: Optional[bool] = Query(
         default=None, description="Filter by active status"
     ),
-    name: Optional[str] = Query(default="", description="Search categories by name"),
+    name: Optional[str] = Query(default=None, description="Search categories by name"),
 ) -> PaginatedResponse[CategoryRead]:
     return await CategoryService.list_categories(
         db, page=page, page_size=page_size, name=name, is_active=is_active

@@ -18,12 +18,7 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 @router.get("/{product_id}", response_model=ProductReadDetail)
 async def get_product(product_id: UUID, db_session: DbSession) -> ProductReadDetail:
-    product = await ProductService.get_product(db_session, product_id)
-    if not product.is_active:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=404, detail="Product not found")
-    return product
+    return await ProductService.get_product(db_session, product_id)
 
 
 @router.get("/", response_model=list[ProductRead])
@@ -41,6 +36,12 @@ async def list_products(
     ),
     brand: Optional[str] = Query(default="", description="Filter products by brand"),
     name: Optional[str] = Query(default="", description="Search products by name"),
+    category: Optional[str] = Query(
+        default=None, description="Filter products by category"
+    ),
+    tags: Optional[list[str]] = Query(
+        default=None, description="Filter products by tags"
+    ),
 ) -> PaginatedResponse[ProductRead]:
     return await ProductService.list_products(
         db_session,
@@ -51,6 +52,8 @@ async def list_products(
         is_active=True,
         min_price=min_price,
         max_price=max_price,
+        category_id=category,
+        tag_ids=tags,
     )
 
 
@@ -85,6 +88,12 @@ async def list_all_products(
     ),
     brand: Optional[str] = Query(default="", description="Filter products by brand"),
     name: Optional[str] = Query(default="", description="Search products by name"),
+    category: Optional[str] = Query(
+        default=None, description="Filter products by category"
+    ),
+    tags: Optional[list[str]] = Query(
+        default=None, description="Filter products by tags"
+    ),
     is_active: Optional[bool] = Query(
         default=None, description="Filter by active status"
     ),
@@ -98,6 +107,8 @@ async def list_all_products(
         is_active=is_active,
         min_price=min_price,
         max_price=max_price,
+        category=category,
+        tags=tags,
     )
 
 

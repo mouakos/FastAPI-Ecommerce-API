@@ -27,6 +27,8 @@ class ProductService:
         max_price: Optional[float],
         brand: Optional[str],
         name: Optional[str],
+        category: Optional[str],
+        tags: Optional[list[str]],
         is_active: bool,
     ) -> PaginatedResponse[ProductRead]:
         """List products with pagination and filtering.
@@ -39,12 +41,16 @@ class ProductService:
             min_price (Optional[float]): Minimum price to filter products.
             max_price (Optional[float]): Maximum price to filter products.
             brand (Optional[str]): Filter products by brand.
+            category (Optional[str]): Filter products by category ID.
+            tags (Optional[list[str]]): Filter products by tag IDs.
             is_active (bool): Filter by active status.
 
         Returns:
             PaginatedResponse[ProductRead]: A paginated response containing the list of products.
         """
-        filters = ProductService._build_product_filters(name, is_active, min_price, max_price, brand)
+        filters = ProductService._build_product_filters(
+            name, is_active, min_price, max_price, brand, category, tags
+        )
 
         # Get total count
         count_stmt = select(func.count()).select_from(Product).where(*filters)
@@ -189,7 +195,7 @@ class ProductService:
         )
 
         return exists.first() is not None
-    
+
     @staticmethod
     def _build_product_filters(
         name: Optional[str],
@@ -197,6 +203,8 @@ class ProductService:
         min_price: Optional[float],
         max_price: Optional[float],
         brand: Optional[str],
+        category: Optional[str],
+        tags: Optional[list[str]],
     ):
         filters = []
         if name:
@@ -209,11 +217,16 @@ class ProductService:
             filters.append(Product.price <= max_price)
         if brand:
             filters.append(Product.brand.ilike(f"%{brand}%"))
+        if category:
+            filters.append(Product.category.name.ilike(f"%{category}%"))
+        if tags:
+            filters.append(Product.tags.any(name__in=tags))
         return filters
 
-
     @staticmethod
-    async def _check_name_conflict(db: AsyncSession, name: str, exclude_id: UUID) -> bool:
+    async def _check_name_conflict(
+        db: AsyncSession, name: str, exclude_id: UUID
+    ) -> bool:
         conflict = await db.exec(
             select(Product).where(
                 func.lower(Product.name) == name.lower(),

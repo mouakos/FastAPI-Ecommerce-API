@@ -80,7 +80,11 @@ class AddressService:
         Returns:
             list[AddressRead]: The list of addresses for the user.
         """
-        result = await db.exec(select(Address).where(Address.user_id == user_id))
+        result = await db.exec(
+            select(Address)
+            .where(Address.user_id == user_id)
+            .order_by(Address.firstname)
+        )
         return result.all()
 
     @staticmethod

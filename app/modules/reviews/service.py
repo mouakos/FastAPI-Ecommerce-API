@@ -133,7 +133,7 @@ class ReviewService:
                 if is_published is not None
                 else True,
             )
-        )
+        ).order_by(Review.rating.desc())
         total = (await db.exec(count_stmt)).one()
 
         # Get paginated reviews

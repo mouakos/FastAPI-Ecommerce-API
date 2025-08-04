@@ -20,7 +20,6 @@ class TagService:
         page: int,
         page_size: int,
         name: Optional[str],
-        is_active: Optional[bool],
     ) -> PaginatedResponse[TagRead]:
         """
         Retrieve a paginated list of tags with optional search functionality.
@@ -30,12 +29,11 @@ class TagService:
             page (int): The page number for pagination.
             page_size (int): The number of tags per page.
             name (Optional[str]): A search term to filter tags by name.
-            is_active (Optional[bool]): Filter tags by active status.
 
         Returns:
             PaginatedResponse[TagRead]: A paginated response containing the tags.
         """
-        filters = TagService._build_tag_filter(name, is_active)
+        filters = TagService._build_tag_filter(name)
         stmt_count = select(func.count()).select_from(Tag).where(*filters)
         total = (await db.exec(stmt_count)).one()
         stmt = (
@@ -164,6 +162,4 @@ class TagService:
         filters = []
         if name:
             filters.append(Tag.name.ilike(f"%{name}%"))
-        if is_active is not None:
-            filters.append(Tag.is_active == is_active)
         return filters

@@ -10,8 +10,11 @@ from app.modules.wishlist.schemas import WishlistRead
 
 
 class UserBase(BaseModel):
-    full_name: str = Field(
-        ..., min_length=2, max_length=50, description="Full name of the user"
+    firstname: Optional[str] = Field(
+        ..., description="First name of the user", max_length=50, min_length=2
+    )
+    lastname: Optional[str] = Field(
+        ..., description="Last name of the user", max_length=50, min_length=2
     )
     email: EmailStr = Field(..., max_length=50, description="Email address of the user")
     gender: Literal["male", "female", "other"] = Field(
@@ -59,8 +62,11 @@ class UserReadDetail(UserRead):
 
 
 class UserUpdate(BaseModel):
-    full_name: Optional[str] = Field(
-        None, min_length=2, max_length=50, description="Full name of the user"
+    firstname: Optional[str] = Field(
+        None, max_length=50, description="First name of the user", min_length=2
+    )
+    lastname: Optional[str] = Field(
+        None, max_length=50, description="Last name of the user", min_length=2
     )
     date_of_birth: Optional[date] = Field(None, description="Date of birth of the user")
     phone_number: Optional[str] = Field(

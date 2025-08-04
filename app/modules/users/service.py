@@ -45,7 +45,7 @@ class UserService:
         stmt = (
             select(User)
             .where(*filters)
-            .order_by(User.email)
+            .order_by(User.fistname)
             .limit(page_size)
             .offset((page - 1) * page_size)
         )

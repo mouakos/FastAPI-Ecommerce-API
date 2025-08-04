@@ -19,7 +19,7 @@ class TagService:
         db: AsyncSession,
         page: int,
         page_size: int,
-        search: Optional[str],
+        name: Optional[str],
         is_active: Optional[bool],
     ) -> PaginatedResponse[TagRead]:
         """
@@ -29,27 +29,18 @@ class TagService:
             db (AsyncSession): The database session.
             page (int): The page number for pagination.
             page_size (int): The number of tags per page.
-            search (Optional[str]): A search term to filter tags by name.
+            name (Optional[str]): A search term to filter tags by name.
             is_active (Optional[bool]): Filter tags by active status.
 
         Returns:
             PaginatedResponse[TagRead]: A paginated response containing the tags.
         """
-        stmt_count = (
-            select(func.count())
-            .select_from(Tag)
-            .where(
-                (Tag.name.ilike(f"%{search}%")) if search else True,
-                (Tag.is_active == is_active) if is_active is not None else True,
-            )
-        )
+        filters = TagService._build_tag_filter(name, is_active)
+        stmt_count = select(func.count()).select_from(Tag).where(*filters)
         total = (await db.exec(stmt_count)).one()
         stmt = (
             select(Tag)
-            .where(
-                (Tag.name.ilike(f"%{search}%")) if search else True,
-                (Tag.is_active == is_active) if is_active is not None else True,
-            )
+            .where(*filters)
             .order_by(Tag.name)
             .limit(page_size)
             .offset((page - 1) * page_size)
@@ -166,3 +157,13 @@ class TagService:
             raise NotFoundError(f"Tag with ID {tag_id} not found")
         await db.delete(tag)
         await db.commit()
+
+    @staticmethod
+    def _build_tag_filter(name: Optional[str], is_active: Optional[bool]) -> list:
+        """Build filter conditions for tag queries."""
+        filters = []
+        if name:
+            filters.append(Tag.name.ilike(f"%{name}%"))
+        if is_active is not None:
+            filters.append(Tag.is_active == is_active)
+        return filters

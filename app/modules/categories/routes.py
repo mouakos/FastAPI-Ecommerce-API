@@ -23,10 +23,10 @@ async def list_active_categories(
     page_size: int = Query(
         default=10, ge=1, le=100, description="Number of categories per page"
     ),
-    search: Optional[str] = Query(default="", description="Search categories by name"),
+    name: Optional[str] = Query(default="", description="Search categories by name"),
 ) -> PaginatedResponse[CategoryRead]:
     return await CategoryService.list_categories(
-        db, page=page, page_size=page_size, search=search, is_active=True
+        db, page=page, page_size=page_size, name=name, is_active=True
     )
 
 
@@ -35,13 +35,7 @@ async def get_category(
     db: DbSession,
     category_id: UUID,
 ):
-    category = await CategoryService.get_category(db, category_id)
-    if not category.is_active:
-        # Hide inactive categories from normal users
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=404, detail="Category not found")
-    return category
+    return await CategoryService.get_category(db, category_id)
 
 
 @router.get(
@@ -58,10 +52,10 @@ async def list_all_categories(
     is_active: Optional[bool] = Query(
         default=None, description="Filter by active status"
     ),
-    search: Optional[str] = Query(default="", description="Search categories by name"),
+    name: Optional[str] = Query(default="", description="Search categories by name"),
 ) -> PaginatedResponse[CategoryRead]:
     return await CategoryService.list_categories(
-        db, page=page, page_size=page_size, search=search, is_active=is_active
+        db, page=page, page_size=page_size, name=name, is_active=is_active
     )
 
 

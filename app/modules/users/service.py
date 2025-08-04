@@ -24,7 +24,7 @@ class UserService:
         page_size: int,
         role: Optional[str],
         is_active: Optional[bool],
-        search: Optional[str],
+        email: Optional[str],
     ) -> PaginatedResponse[UserRead]:
         """Retrieve all users with pagination and optional filters.
 
@@ -33,34 +33,23 @@ class UserService:
             page (int): Page number for pagination.
             page_size (int): Number of users per page.
             role (Optional[UserRole]): Filter by user role.
-            search (Optional[str]): Search term to filter users by email.
+            email (Optional[str]): Search term to filter users by email.
 
         Returns:
             PaginatedResponse[UserRead]: A paginated response containing user data.
         """
-        stmt_count = (
-            select(func.count())
-            .select_from(User)
-            .where(
-                (User.role == role) if role else True,
-                (User.is_active == is_active) if is_active is not None else True,
-                (User.email.ilike(f"%{search}%")) if search else True,
-            )
-        )
+        filters = UserService._build_user_filters(role, is_active, email)
+        stmt_count = select(func.count()).select_from(User).where(*filters)
         total = (await db.exec(stmt_count)).one()
 
         stmt = (
             select(User)
-            .where(
-                (User.role == role) if role else True,
-                (User.is_active == is_active) if is_active is not None else True,
-                (User.email.ilike(f"%{search}%")) if search else True,
-            )
+            .where(*filters)
             .order_by(User.email)
             .limit(page_size)
             .offset((page - 1) * page_size)
         )
-        
+
         result = await db.exec(stmt)
         users = result.all()
         return PaginatedResponse[UserRead](
@@ -167,3 +156,16 @@ class UserService:
         user.password_hash = get_password_hash(password_data.new_password)
         await db.commit()
         return user
+
+    @staticmethod
+    def _build_user_filters(
+        role: Optional[str], is_active: Optional[bool], email: Optional[str]
+    ):
+        filters = []
+        if role:
+            filters.append(User.role == role)
+        if is_active is not None:
+            filters.append(User.is_active == is_active)
+        if email:
+            filters.append(User.email.ilike(f"%{email}%"))
+        return filters

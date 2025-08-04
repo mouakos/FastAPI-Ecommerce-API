@@ -19,7 +19,7 @@ class CategoryService:
         page: int,
         page_size: int,
         is_active: Optional[bool] = None,
-        search: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> PaginatedResponse[CategoryRead]:
         """
         Retrieve a paginated list of categories with optional search functionality.
@@ -28,41 +28,32 @@ class CategoryService:
             page (int): The page number for pagination.
             page_size (int): The number of categories per page.
             is_active (Optional[bool]): Filter categories by active status.
-            search (Optional[str]): A search term to filter categories by name.
+            name (Optional[str]): A search term to filter categories by name.
         Returns:
             PaginatedResponse[CategoryRead]: A paginated response containing category data.
         """
+        filters = CategoryService._build_filters(is_active, name)
         # Get total count based on filters
-        count_stmt = (
-            select(func.count())
-            .select_from(Category)
-            .where(
-                (Category.name.ilike(f"%{search}%")) if search else True,
-                (Category.is_active == is_active) if is_active is not None else True,
-            )
-        )
+        count_stmt = select(func.count()).select_from(Category).where(*filters)
         total = (await db.exec(count_stmt)).one()
 
         # Get paginated categories
         stmt = (
             select(Category)
-            .where(
-                (Category.name.ilike(f"%{search}%")) if search else True,
-                (Category.is_active == is_active) if is_active is not None else True,
-            )
+            .where(*filters)
             .order_by(Category.name)
             .limit(page_size)
             .offset((page - 1) * page_size)
         )
 
-        categories = await db.exec(stmt)
+        categories = (await db.exec(stmt)).all()
 
         return PaginatedResponse[CategoryRead](
             total=total,
             page=page,
             size=page_size,
             pages=ceil(total / page_size) if total else 1,
-            items=[CategoryRead(**category.model_dump()) for category in categories],
+            items=categories,
         )
 
     @staticmethod
@@ -186,3 +177,13 @@ class CategoryService:
         """
         result = await db.exec(select(Category).where(Category.slug == slug))
         return result.first()
+
+    @staticmethod
+    def _build_filters(is_active: Optional[bool] = None, name: Optional[str] = None):
+        """Build filters for category queries."""
+        filters = []
+        if is_active is not None:
+            filters.append(Category.is_active == is_active)
+        if name:
+            filters.append(Category.name.ilike(f"%{name}%"))
+        return filters

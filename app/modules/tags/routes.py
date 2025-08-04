@@ -22,11 +22,9 @@ async def list_tags(
     page_size: int = Query(
         default=10, ge=1, le=100, description="Number of tags per page"
     ),
-    search: Optional[str] = Query(default="", description="Search tags by name"),
+    name: Optional[str] = Query(default=None, description="Search tags by name"),
 ) -> PaginatedResponse[TagRead]:
-    return await TagService.list_tags(
-        db_session, page, page_size, search, is_active=True
-    )
+    return await TagService.list_tags(db_session, page, page_size, name, is_active=True)
 
 
 @router.get("/{tag_id}", response_model=TagReadDetail)
@@ -48,13 +46,13 @@ async def list_all_tags(
     page_size: int = Query(
         default=10, ge=1, le=100, description="Number of tags per page"
     ),
-    search: Optional[str] = Query(default="", description="Search tags by name"),
+    name: Optional[str] = Query(default=None, description="Search tags by name"),
     is_active: Optional[bool] = Query(
         default=None, description="Filter tags by active status"
     ),
 ) -> PaginatedResponse[TagRead]:
     return await TagService.list_tags(
-        db_session, page=page, page_size=page_size, search=search, is_active=is_active
+        db_session, page=page, page_size=page_size, name=name, is_active=is_active
     )
 
 

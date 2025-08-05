@@ -174,8 +174,8 @@ class TagService:
 
         Args:
             db (AsyncSession): The database session.
-            tags (TagAdd): The tags to assign to the product.
             product_id (UUID): The ID of the product.
+            tags (TagAdd): The tags to assign to the product.
 
         Raises:
             NotFoundError: If the product or any tag does not exist.
@@ -193,15 +193,15 @@ class TagService:
 
     @staticmethod
     async def remove_tag_from_product(
-        db: AsyncSession, tag_id: UUID, product_id: UUID
+        db: AsyncSession, product_id: UUID, tag_id: UUID
     ) -> None:
         """
         Remove a tag from a product.
 
         Args:
             db (AsyncSession): The database session.
-            tag_id (UUID): The ID of the tag to remove.
             product_id (UUID): The ID of the product.
+            tag_id (UUID): The ID of the tag to remove.
 
         Raises:
             NotFoundError: If the product or tag does not exist.

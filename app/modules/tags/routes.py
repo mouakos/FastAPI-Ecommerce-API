@@ -68,7 +68,7 @@ async def delete_tag(tag_id: UUID, db_session: DbSession) -> None:
 async def add_tags_to_product(
     product_id: UUID, db_session: DbSession, tags: TagAdd
 ) -> None:
-    await TagService.add_tags_to_product(db_session, tags, product_id)
+    await TagService.add_tags_to_product(db_session, product_id, tags)
 
 
 @router.delete(
@@ -79,4 +79,4 @@ async def add_tags_to_product(
 async def remove_tag_from_product(
     tag_id: UUID, product_id: UUID, db_session: DbSession
 ) -> None:
-    await TagService.remove_tag_from_product(db_session, tag_id, product_id)
+    await TagService.remove_tag_from_product(db_session, product_id, tag_id)

@@ -16,6 +16,20 @@ class OrderService:
     async def create_order(
         db: AsyncSession, user_id: UUID, data: OrderCreate
     ) -> OrderRead:
+        """Create a new order for a user.
+
+        Args:
+            db (AsyncSession): The database session.
+            user_id (UUID): The ID of the user to create the order for.
+            data (OrderCreate): The data for the new order.
+
+        Raises:
+            ConflictError: If the cart is empty or if any product is out of stock.
+            NotFoundError: If the shipping or billing address or user is not found.
+
+        Returns:
+            OrderRead: The created order.
+        """
         cart = await CartService.get_cart(db, user_id)
 
         shipping_address = await AddressService.get_user_address(

@@ -17,6 +17,8 @@ class CartService:
         Args:
             db (AsyncSession): Database session.
             user_id (UUID): Unique identifier for the user.
+        Raises:
+            NotFoundError: If the user does not exist.
 
         Returns:
             Cart: The user's cart.

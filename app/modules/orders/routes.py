@@ -21,10 +21,10 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
     status_code=status.HTTP_201_CREATED,
 )
 async def create_order(
+    data: OrderCreate,
     db: DbSession,
     token_data: AccessToken,
-    data: OrderCreate,
-):
+) -> OrderRead:
     return await OrderService.create_order(db, token_data.get_uuid(), data)
 
 
@@ -32,7 +32,7 @@ async def create_order(
 async def list_my_orders(
     db: DbSession,
     token_data: AccessToken,
-):
+) -> List[OrderRead]:
     return await OrderService.list_orders_by_user(db, token_data.get_uuid())
 
 
@@ -41,7 +41,7 @@ async def get_my_order(
     order_id: UUID,
     db: DbSession,
     token_data: AccessToken,
-):
+) -> OrderRead:
     return await OrderService.get_order_by_user(db, token_data.get_uuid(), order_id)
 
 
@@ -54,7 +54,7 @@ async def get_order(
     order_id: UUID,
     user_id: UUID,
     db: DbSession,
-):
+) -> OrderRead:
     return await OrderService.get_order_by_user(db, user_id, order_id)
 
 
@@ -66,7 +66,7 @@ async def get_order(
 async def list_orders_by_user(
     user_id: UUID,
     db: DbSession,
-):
+) -> List[OrderRead]:
     return await OrderService.list_orders_by_user(db, user_id)
 
 
@@ -80,5 +80,5 @@ async def update_order_status(
     order_id: UUID,
     order_status: OrderStatusUpdate,
     db: DbSession,
-):
+) -> None:
     await OrderService.update_order_status(db, user_id, order_id, order_status.status)

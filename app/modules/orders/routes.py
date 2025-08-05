@@ -8,7 +8,7 @@ from ..auth.dependencies import AccessToken, RoleChecker
 from .schemas import OrderCreate, OrderRead, OrderStatusUpdate
 from .service import OrderService
 
-router = APIRouter(prefix="/api/v1", tags=["orders"])
+router = APIRouter(prefix="/api/v1", tags=["Orders"])
 
 role_checker_admin = Depends(RoleChecker(["admin"]))
 

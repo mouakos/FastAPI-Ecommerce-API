@@ -7,8 +7,9 @@ from slugify import slugify
 
 from app.exceptions import ConflictError, NotFoundError
 from app.models.tag import Tag
+from app.modules.products.service import ProductService
 from app.utils.paginate import PaginatedResponse
-from .schemas import TagCreate, TagRead, TagReadDetail, TagUpdate
+from .schemas import TagAdd, TagCreate, TagRead, TagUpdate
 
 
 class TagService:
@@ -56,7 +57,7 @@ class TagService:
         )
 
     @staticmethod
-    async def get_tag(db: AsyncSession, tag_id: UUID) -> TagReadDetail:
+    async def get_tag(db: AsyncSession, tag_id: UUID) -> TagRead:
         """
         Retrieve a tag by its ID.
 
@@ -163,3 +164,53 @@ class TagService:
         if name:
             filters.append(Tag.name.ilike(f"%{name}%"))
         return filters
+
+    @staticmethod
+    async def add_tags_to_product(
+        db: AsyncSession, tags: TagAdd, product_id: UUID
+    ) -> None:
+        """
+        Assign tags to a product.
+
+        Args:
+            db (AsyncSession): The database session.
+            tags (TagAdd): The tags to assign to the product.
+            product_id (UUID): The ID of the product.
+
+        Raises:
+            NotFoundError: If the product or any tag does not exist.
+        """
+        product = await ProductService.get_product(db, product_id)
+
+        for tag_id in tags.tags:
+            tag = await db.get(Tag, tag_id)
+            if not tag:
+                raise NotFoundError(f"Tag with ID {tag_id} not found")
+            if tag not in product.tags:
+                product.tags.append(tag)
+
+        await db.commit()
+
+    @staticmethod
+    async def remove_tag_from_product(
+        db: AsyncSession, tag_id: UUID, product_id: UUID
+    ) -> None:
+        """
+        Remove a tag from a product.
+
+        Args:
+            db (AsyncSession): The database session.
+            tag_id (UUID): The ID of the tag to remove.
+            product_id (UUID): The ID of the product.
+
+        Raises:
+            NotFoundError: If the product or tag does not exist.
+        """
+        product = await ProductService.get_product(db, product_id)
+        tag = await db.get(Tag, tag_id)
+        if not tag:
+            raise NotFoundError(f"Tag with ID {tag_id} not found")
+
+        if tag in product.tags:
+            product.tags.remove(tag)
+            await db.commit()

@@ -7,24 +7,20 @@ class TagBase(BaseModel):
     name: str = Field(..., max_length=255, description="Name of the tag")
 
 
+class TagAdd(TagBase):
+    tags: list[UUID] = Field(
+        ..., description="List of tag IDs to be added to the product"
+    )
+
+
 class TagCreate(TagBase):
     pass
 
 
 class TagUpdate(TagBase):
     name: Optional[str] = Field(None, max_length=255, description="Name of the tag")
-    is_active: Optional[bool] = Field(
-        None, description="Indicates if the tag is active or not"
-    )
 
 
 class TagRead(TagBase):
     id: UUID = Field(..., description="Unique identifier of the tag")
     slug: str = Field(..., description="Slug for the tag, used in URLs")
-    is_active: bool = Field(..., description="Indicates if the tag is active or not")
-
-
-class TagReadDetail(TagRead):
-    products: list[UUID] = Field(
-        default_factory=list, description="List of product IDs associated with the tag"
-    )

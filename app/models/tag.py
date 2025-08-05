@@ -14,7 +14,6 @@ class Tag(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(index=True, unique=True, nullable=False)
     slug: str = Field(index=True, unique=True, nullable=False)
-    is_active: bool = Field(default=True, nullable=False)
 
     # Relationship with products
     products: list["Product"] = Relationship(

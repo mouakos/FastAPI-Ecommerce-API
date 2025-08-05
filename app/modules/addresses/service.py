@@ -45,8 +45,8 @@ class AddressService:
 
         Args:
             db (AsyncSession): The database session.
-            address_id (UUID): The ID of the address to retrieve.
             user_id (UUID): The ID of the user who owns the address.
+            address_id (UUID): The ID of the address to retrieve.
 
         Raises:
             NotFoundError: If the user or address is not found.

@@ -1,86 +1,69 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from typing import Annotated, List
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ...database.core import get_session
 from ..auth.dependencies import AccessToken, RoleChecker
-from .schemas import OrderRead, OrderStatusUpdate
+from .schemas import OrderCreate, OrderRead, OrderStatusUpdate
 from .service import OrderService
 
-router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
+router = APIRouter(prefix="/api/v1", tags=["orders"])
 
 role_checker_admin = Depends(RoleChecker(["admin"]))
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
-# User endpoints
 @router.post(
-    "/",
+    "/users/me/orders",
     response_model=OrderRead,
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new order (user)",
 )
 async def create_order(
     db: DbSession,
     token_data: AccessToken,
+    data: OrderCreate,
 ):
-    return await OrderService.create_order(db, UUID(token_data.sub))
+    return await OrderService.create_order(db, token_data.get_uuid(), data)
 
 
-@router.get(
-    "/me",
-    response_model=List[OrderRead],
-    summary="List my orders",
-)
+@router.get("/users/me/orders", response_model=List[OrderRead])
 async def list_my_orders(
     db: DbSession,
     token_data: AccessToken,
 ):
-    return await OrderService.list_orders_by_user(db, UUID(token_data.sub))
+    return await OrderService.list_orders_by_user(db, token_data.get_uuid())
 
 
-@router.get(
-    "/me/{order_id}",
-    response_model=OrderRead,
-    summary="Get my order by ID",
-)
-async def get_my_order_by_id(
+@router.get("/users/me/orders/{order_id}", response_model=OrderRead)
+async def get_my_order(
     order_id: UUID,
     db: DbSession,
     token_data: AccessToken,
 ):
-    order = await OrderService.get_order_by_id(db, order_id)
-    if not order or order.user_id != UUID(token_data.sub):
-        raise HTTPException(status_code=404, detail="Order not found")
-    return order
+    return await OrderService.get_order_by_user(db, token_data.get_uuid(), order_id)
 
 
-# Admin endpoints
 @router.get(
-    "/{order_id}",
+    "/users/{user_id}/orders/{order_id}",
     response_model=OrderRead,
-    summary="Get order by ID (admin)",
     dependencies=[role_checker_admin],
 )
-async def admin_get_order(
+async def get_order(
     order_id: UUID,
+    user_id: UUID,
     db: DbSession,
 ):
-    order = await OrderService.get_order_by_id(db, order_id)
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-    return order
+    return await OrderService.get_order_by_user(db, user_id, order_id)
 
 
 @router.get(
-    "/user/{user_id}",
+    "/users/{user_id}/orders",
     response_model=List[OrderRead],
-    summary="List orders by user (admin)",
     dependencies=[role_checker_admin],
 )
-async def admin_list_orders_by_user(
+async def list_orders_by_user(
     user_id: UUID,
     db: DbSession,
 ):
@@ -88,15 +71,14 @@ async def admin_list_orders_by_user(
 
 
 @router.patch(
-    "/{order_id}/status",
-    response_model=OrderRead,
-    summary="Update order status (admin)",
+    "/users/{user_id}/orders/{order_id}/status",
+    status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[role_checker_admin],
 )
-async def admin_update_order_status(
+async def update_order_status(
+    user_id: UUID,
     order_id: UUID,
     order_status: OrderStatusUpdate,
     db: DbSession,
 ):
-    order = await OrderService.update_order_status(db, order_id, order_status.status)
-    return order
+    await OrderService.update_order_status(db, user_id, order_id, order_status.status)

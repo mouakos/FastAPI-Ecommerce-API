@@ -1,51 +1,41 @@
-from datetime import datetime
-from typing import Optional
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
-from fastapi import HTTPException, status
 
-from ...models.address import Address
-from ...models.order import Order, OrderItem
-from ...models.product import Product
-from ..carts.service import CartService
-from .schemas import OrderCreate, OrderStatus
+from app.exceptions import ConflictError, NotFoundError
+from app.modules.addresses.service import AddressService
+from app.modules.users.service import UserService
+from app.models.order import Order, OrderItem
+from app.models.product import Product
+from app.modules.carts.service import CartService
+from .schemas import OrderCreate, OrderRead, OrderStatus
 
 
 class OrderService:
     @staticmethod
-    async def create_order(db: AsyncSession, user_id: UUID, data: OrderCreate) -> Order:
+    async def create_order(
+        db: AsyncSession, user_id: UUID, data: OrderCreate
+    ) -> OrderRead:
         cart = await CartService.get_cart(db, user_id)
 
-        if not cart.items:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cart is empty, cannot create order.",
-            )
-
-        shipping_address = db.get(Address, data.shipping_address_id)
-        if not shipping_address:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Shipping address not found.",
-            )
+        shipping_address = await AddressService.get_user_address(
+            db, user_id, data.shipping_address_id
+        )
 
         if data.billing_address_id:
-            billing_address = db.get(Address, data.billing_address_id)
-            if data.billing_address_id and not billing_address:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Billing address not found.",
-                )
+            billing_address = await AddressService.get_user_address(
+                db, user_id, data.billing_address_id
+            )
+        else:
+            billing_address = shipping_address
 
         # validate inventory & snapshot unit prices
         order_items: list[OrderItem] = []
         for item in cart.items:
             product = await db.get(Product, item.product_id)
             if not product or product.stock < item.quantity:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Product {item.product_id} is out of stock or insufficient quantity.",
+                raise ConflictError(
+                    f"Product {item.product_id} is out of stock or insufficient quantity.",
                 )
             product.stock -= item.quantity
             order_items.append(
@@ -62,49 +52,85 @@ class OrderService:
             user_id=user_id,
             items=order_items,
             total_amount=cart.total_amount,
-            shipping_address_id=data.shipping_address_id,
-            billing_address_id=data.billing_address_id,
+            shipping_address_id=shipping_address.id,
+            billing_address_id=billing_address.id,
         )
         db.add(order)
         await db.commit()
-        await db.refresh(order)
         return order
 
     @staticmethod
-    async def get_order_by_id(db: AsyncSession, order_id: UUID) -> Optional[Order]:
-        result = await db.execute(select(Order).where(Order.id == order_id))
-        return result.scalar_one_or_none()
+    async def get_order_by_user(
+        db: AsyncSession, user_id: UUID, order_id: UUID
+    ) -> OrderRead:
+        """Get an order by its ID for a specific user.
 
-    @staticmethod
-    async def get_order_by_user(db: AsyncSession, user_id: UUID) -> Optional[Order]:
-        result = await db.exec(select(Order).where(Order.user_id == user_id))
-        return result.first()
+        Args:
+            db (AsyncSession): The database session.
+            order_id (UUID): The ID of the order to retrieve.
+            user_id (UUID): The ID of the user who owns the order.
 
-    @staticmethod
-    async def list_orders_by_user(db: AsyncSession, user_id: UUID) -> list[Order]:
+        Raises:
+            NotFoundError: If the user or order is not found.
+
+        Returns:
+            OrderRead: The retrieved order.
+        """
         result = await db.exec(
-            select(Order)
-            .where(Order.user_id == user_id)
-            .order_by(Order.created_at.desc())
+            select(Order).where(Order.id == order_id, Order.user_id == user_id)
         )
+        order = result.first()
+        if not order:
+            raise NotFoundError(
+                f"Order with ID {order_id} not found for user {user_id}"
+            )
+        return order
+
+    @staticmethod
+    async def list_orders_by_user(db: AsyncSession, user_id: UUID) -> list[OrderRead]:
+        """List all orders for a specific user.
+
+        Args:
+            db (AsyncSession): The database session.
+            user_id (UUID): The ID of the user to list orders for.
+
+        Returns:
+            list[OrderRead]: The list of orders for the user.
+        """
+        user = await UserService.get_user(db, user_id)
+
+        stmt = select(Order).where(Order.user_id == user.id)
+        result = await db.exec(stmt)
         return result.all()
 
     @staticmethod
     async def update_order_status(
-        db: AsyncSession, order_id: UUID, order_status: OrderStatus
-    ) -> Order:
-        result = await db.exec(select(Order).where(Order.id == order_id))
+        db: AsyncSession, user_id: UUID, order_id: UUID, order_status: OrderStatus
+    ) -> OrderRead:
+        """Update the status of an order.
+
+        Args:
+            db (AsyncSession): The database session.
+            user_id (UUID): The ID of the user who owns the order.
+            order_id (UUID): The ID of the order to update.
+            order_status (OrderStatus): The new status for the order.
+
+        Raises:
+            NotFoundError: If the user or order is not found.
+        Returns:
+            OrderRead: The updated order.
+        """
+        user = await UserService.get_user(db, user_id)
+
+        result = await db.exec(
+            select(Order).where(Order.id == order_id, Order.user_id == user.id)
+        )
         order = result.first()
         if not order:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
+            raise NotFoundError(
+                f"Order with ID {order_id} not found for user {user_id}"
             )
 
-        if order.status.value != order_status.value:
-            # Only update if the status is changing
-            order.status = order_status
-            order.updated_at = datetime.utcnow()
-
+        order.status = order_status.value
         await db.commit()
-        await db.refresh(order)
         return order

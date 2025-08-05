@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr, Field
 from uuid import UUID
 
 from app.modules.addresses.schemas import AddressRead
+from app.modules.carts.schemas import CartRead
 from app.modules.orders.schemas import OrderRead
 from app.modules.reviews.schemas import ReviewRead
 from app.modules.wishlist.schemas import WishlistRead
@@ -47,17 +48,20 @@ class UserRead(UserBase):
 
 
 class UserReadDetail(UserRead):
-    addresses: Optional[list[AddressRead]] = Field(
+    addresses: list[AddressRead] = Field(
         default_factory=list, description="List of addresses associated with the user"
     )
-    orders: Optional[list[OrderRead]] = Field(
+    orders: list[OrderRead] = Field(
         default_factory=list, description="List of orders associated with the user"
     )
-    reviews: Optional[list[ReviewRead]] = Field(
+    reviews: list[ReviewRead] = Field(
         default_factory=list, description="List of reviews associated with the user"
     )
     wishlist: Optional["WishlistRead"] = Field(
         default=None, description="Wishlist associated with the user"
+    )
+    cart: Optional[CartRead] = Field(
+        default=None, description="Cart associated with the user"
     )
 
 

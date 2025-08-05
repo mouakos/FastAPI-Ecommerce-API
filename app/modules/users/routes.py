@@ -27,7 +27,7 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
     dependencies=[role_checker_admin],
 )
 async def get_all_users(
-    db_session: DbSession,
+    db: DbSession,
     page: int = Query(default=1, ge=1, description="Page number"),
     page_size: int = Query(
         default=10, ge=1, le=100, description="Number of users per page"
@@ -41,7 +41,7 @@ async def get_all_users(
     email: Optional[str] = Query(default="", description="Search based email"),
 ) -> PaginatedResponse[UserRead]:
     return await UserService.get_all_users(
-        db_session,
+        db,
         page=page,
         page_size=page_size,
         email=email,
@@ -55,8 +55,8 @@ async def get_all_users(
     response_model=UserReadDetail,
     dependencies=[role_checker_admin],
 )
-async def get_user(db_session: DbSession, user_id: UUID) -> UserReadDetail:
-    return await UserService.get_user(db_session, user_id)
+async def get_user(user_id: UUID, db: DbSession) -> UserReadDetail:
+    return await UserService.get_user(db, user_id)
 
 
 @router.patch(
@@ -65,11 +65,11 @@ async def get_user(db_session: DbSession, user_id: UUID) -> UserReadDetail:
     dependencies=[role_checker_admin],
 )
 async def update_user(
-    db_session: DbSession,
     user_id: UUID,
     user_update: AdminUserUpdate,
+    db: DbSession,
 ) -> UserRead:
-    return await UserService.update_user(db_session, user_id, user_update)
+    return await UserService.update_user(db, user_id, user_update)
 
 
 @router.delete(
@@ -77,5 +77,5 @@ async def update_user(
     dependencies=[role_checker_admin],
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_user(db_session: DbSession, user_id: UUID) -> None:
-    await UserService.delete_user(db_session, user_id)
+async def delete_user(user_id: UUID, db: DbSession) -> None:
+    await UserService.delete_user(db, user_id)

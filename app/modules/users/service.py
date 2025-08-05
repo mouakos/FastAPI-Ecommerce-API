@@ -33,6 +33,7 @@ class UserService:
             page (int): Page number for pagination.
             page_size (int): Number of users per page.
             role (Optional[UserRole]): Filter by user role.
+            is_active (Optional[bool]): Filter by active status.
             email (Optional[str]): Search term to filter users by email.
 
         Returns:
@@ -84,7 +85,7 @@ class UserService:
         """Update a user's information.
 
         Args:
-            self (UserService): User service instance.
+            db (AsyncSession): The database session.
             user_id (UUID): User ID to update.
             user_data (dict): Data to update the user with.
 

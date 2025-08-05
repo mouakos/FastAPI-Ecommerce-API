@@ -23,16 +23,16 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
     response_model=UserRead,
     status_code=status.HTTP_201_CREATED,
 )
-async def signup(db_session: DbSession, user_create: UserCreate) -> UserRead:
-    return await AuthService.register_user(db_session, user_create)
+async def signup(user_create: UserCreate, db: DbSession) -> UserRead:
+    return await AuthService.register_user(db, user_create)
 
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
-    db_session: DbSession, form_data: OAuth2PasswordRequestForm = Depends()
+    db: DbSession, form_data: OAuth2PasswordRequestForm = Depends()
 ) -> TokenResponse:
     login_data = UserLogin(email=form_data.username, password=form_data.password)
-    return await AuthService.login(db_session, login_data)
+    return await AuthService.login(db, login_data)
 
 
 @router.get("/refresh", response_model=TokenResponse)

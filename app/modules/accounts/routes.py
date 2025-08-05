@@ -19,22 +19,30 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
 @router.get("/", response_model=UserReadDetail)
-async def get_my_account(token_data: AccessToken, db_session: DbSession) -> UserReadDetail:
+async def get_my_account(
+    token_data: AccessToken, db_session: DbSession
+) -> UserReadDetail:
     return await UserService.get_user(db_session, token_data.get_uuid())
 
 
 @router.patch("/", response_model=UserRead)
 async def update_my_account(
-    db_session: DbSession, token_data: AccessToken, user_update: UserUpdate
+    user_update: UserUpdate,
+    db_session: DbSession,
+    token_data: AccessToken,
 ) -> UserRead:
     return await UserService.update_user(db_session, token_data.get_uuid(), user_update)
 
 
 @router.patch("/update-password", status_code=status.HTTP_204_NO_CONTENT)
 async def update_my_password(
-    db_session: DbSession, token_data: AccessToken, password_data: PasswordUpdate
+    password_data: PasswordUpdate,
+    db_session: DbSession,
+    token_data: AccessToken,
 ) -> None:
-    await UserService.change_user_password(db_session, token_data.get_uuid(), password_data)
+    await UserService.change_user_password(
+        db_session, token_data.get_uuid(), password_data
+    )
 
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)

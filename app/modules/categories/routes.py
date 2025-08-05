@@ -32,9 +32,9 @@ async def list_active_categories(
 
 @router.get("/{category_id}", response_model=CategoryRead)
 async def get_category(
-    db: DbSession,
     category_id: UUID,
-):
+    db: DbSession,
+) -> CategoryRead:
     return await CategoryService.get_category(db, category_id)
 
 
@@ -66,9 +66,9 @@ async def list_all_categories(
     dependencies=[role_checker_admin],
 )
 async def create_category(
-    db: DbSession,
     category_data: CategoryCreate,
-):
+    db: DbSession,
+) -> CategoryRead:
     return await CategoryService.create_category(db, category_data)
 
 
@@ -78,10 +78,10 @@ async def create_category(
     dependencies=[role_checker_admin],
 )
 async def update_category(
-    db: DbSession,
     category_id: UUID,
     update_data: CategoryUpdate,
-):
+    db: DbSession,
+) -> CategoryRead:
     return await CategoryService.update_category(db, category_id, update_data)
 
 
@@ -90,5 +90,5 @@ async def update_category(
     dependencies=[role_checker_admin],
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_category(db: DbSession, category_id: UUID) -> None:
+async def delete_category(category_id: UUID, db: DbSession) -> None:
     await CategoryService.delete_category(db, category_id)

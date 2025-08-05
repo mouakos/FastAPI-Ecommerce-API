@@ -41,14 +41,14 @@ async def remove_item_from_my_wishlist(
     product_id: UUID,
     db: DbSession,
     token_data: AccessToken,
-):
+) -> None:
     await WishlistService.remove_item_from_user_wishlist(
         db, token_data.get_uuid(), product_id
     )
 
 
 @router.delete("/me/wishlist/clear", status_code=status.HTTP_204_NO_CONTENT)
-async def clear_my_wishlist(db: DbSession, token_data: AccessToken):
+async def clear_my_wishlist(db: DbSession, token_data: AccessToken) -> None:
     await WishlistService.clear_user_wishlist(db, token_data.get_uuid())
 
 
@@ -57,5 +57,5 @@ async def clear_my_wishlist(db: DbSession, token_data: AccessToken):
     response_model=WishlistRead,
     dependencies=[role_checker_admin],
 )
-async def get_user_wishlist(user_id: UUID, db: DbSession):
+async def get_user_wishlist(user_id: UUID, db: DbSession) -> WishlistRead:
     return await WishlistService.get_user_wishlist(db, user_id)

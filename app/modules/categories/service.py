@@ -2,7 +2,6 @@ from math import ceil
 from typing import Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
-from uuid import UUID
 from slugify import slugify
 
 
@@ -59,13 +58,13 @@ class CategoryService:
     @staticmethod
     async def get_category(
         db: AsyncSession,
-        category_id: UUID,
+        category_id: int,
     ) -> Category:
         """Get a category by its ID.
 
         Args:
             db (AsyncSession): The database session.
-            category_id (UUID): The ID of the category to retrieve.
+            category_id (int): The ID of the category to retrieve.
 
         Raises:
             NotFoundError: If the category is not found.
@@ -110,13 +109,13 @@ class CategoryService:
 
     @staticmethod
     async def update_category(
-        db: AsyncSession, category_id: UUID, update_data: CategoryUpdate
+        db: AsyncSession, category_id: int, update_data: CategoryUpdate
     ) -> CategoryRead:
         """Update an existing category.
 
         Args:
             db (AsyncSession): The database session.
-            category_id (UUID): The ID of the category to update.
+            category_id (int): The ID of the category to update.
             update_data (CategoryUpdate): The updated category data.
 
         Raises:
@@ -149,11 +148,11 @@ class CategoryService:
         return CategoryRead(**category.model_dump())
 
     @staticmethod
-    async def delete_category(db: AsyncSession, category_id: UUID) -> None:
+    async def delete_category(db: AsyncSession, category_id: int) -> None:
         """Delete a category by its ID.
         Args:
             db (AsyncSession): The database session.
-            category_id (UUID): The ID of the category to delete.
+            category_id (int): The ID of the category to delete.
         Raises:
             CategoryNotFound: If the category is not found.
             CategoryHasProducts: If the category has associated products.

@@ -26,8 +26,8 @@ class TokenData(BaseModel):
     refresh: bool
     exp: int
 
-    def get_uuid(self) -> UUID:
-        return UUID(self.sub)
+    def get_int(self) -> int:
+        return int(self.sub)
 
     def is_valid(self) -> bool:
         """

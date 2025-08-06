@@ -2,7 +2,6 @@ from math import ceil
 from typing import Optional
 from sqlmodel import select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
-from uuid import UUID
 
 from app.models.product import Product
 from app.models.review import Review
@@ -17,8 +16,8 @@ class ReviewService:
     @staticmethod
     async def create_product_review(
         db: AsyncSession,
-        user_id: UUID,
-        product_id: UUID,
+        user_id: int,
+        product_id: int,
         data: ReviewCreate,
     ) -> ReviewRead:
         """
@@ -27,7 +26,7 @@ class ReviewService:
         Args:
             db (AsyncSession): The database session.
             data (ReviewCreate): Review data including rating and comment.
-            user_id (UUID): ID of the user writing the review.
+            user_id (int): ID of the user writing the review.
 
         Raises:
             NotFoundError: If the user or product does not exist.
@@ -65,15 +64,15 @@ class ReviewService:
 
     @staticmethod
     async def get_product_review(
-        db: AsyncSession, product_id: UUID, review_id: UUID
+        db: AsyncSession, product_id: int, review_id: int
     ) -> ReviewRead:
         """
         Retrieve a review by its ID for a specific product.
 
         Args:
             db (AsyncSession): The database session.
-            product_id (UUID): Product ID.
-            review_id (UUID): Review ID.
+            product_id (int): Product ID.
+            review_id (int): Review ID.
 
         Raises:
             NotFoundError: If the product or review does not exist.
@@ -96,7 +95,7 @@ class ReviewService:
     @staticmethod
     async def list_product_reviews(
         db: AsyncSession,
-        product_id: UUID,
+        product_id: int,
         page: int,
         size: int,
         min_rating: Optional[int] = None,
@@ -108,7 +107,7 @@ class ReviewService:
 
         Args:
             db (AsyncSession): The database session.
-            product_id (UUID): Product ID.
+            product_id (int): Product ID.
             page (int): Page number for pagination.
             size (int): Number of reviews per page.
             min_rating (Optional[int]): Minimum rating to filter reviews.
@@ -166,9 +165,9 @@ class ReviewService:
     @staticmethod
     async def update_product_review(
         db: AsyncSession,
-        user_id: UUID,
-        product_id: UUID,
-        review_id: UUID,
+        user_id: int,
+        product_id: int,
+        review_id: int,
         data: ReviewUpdate,
     ) -> ReviewRead:
         """
@@ -176,9 +175,9 @@ class ReviewService:
 
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): User ID.
-            product_id (UUID): Product ID.
-            review_id (UUID): Review ID.
+            user_id (int): User ID.
+            product_id (int): Product ID.
+            review_id (int): Review ID.
             data (ReviewUpdate): Updated review data.
 
         Raises:
@@ -217,9 +216,9 @@ class ReviewService:
     @staticmethod
     async def change_product_review_visibility(
         db: AsyncSession,
-        user_id: UUID,
-        product_id: UUID,
-        review_id: UUID,
+        user_id: int,
+        product_id: int,
+        review_id: int,
         data: AdminReviewUpdate,
     ) -> ReviewRead:
         """
@@ -227,9 +226,9 @@ class ReviewService:
 
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): User ID of the admin.
-            product_id (UUID): Product ID.
-            review_id (UUID): Review ID.
+            user_id (int): User ID of the admin.
+            product_id (int): Product ID.
+            review_id (int): Review ID.
             data (AdminReviewUpdate): Updated visibility data.
 
         Raises:
@@ -261,16 +260,16 @@ class ReviewService:
     @staticmethod
     async def delete_product_review(
         db: AsyncSession,
-        user_id: UUID,
-        product_id: UUID,
-        review_id: UUID,
+        user_id: int,
+        product_id: int,
+        review_id: int,
     ) -> None:
         """
         Delete a review by its ID.
 
         Args:
             db (AsyncSession): The database session.
-            review_id (UUID): Review ID.
+            review_id (int): Review ID.
 
         Raises:
             NotFoundError: If the user, product, or review does not exist.
@@ -298,13 +297,13 @@ class ReviewService:
         await ReviewService._update_product_avg_rating(db, product_id)
 
     @staticmethod
-    async def _update_product_avg_rating(db: AsyncSession, product_id: UUID) -> None:
+    async def _update_product_avg_rating(db: AsyncSession, product_id: int) -> None:
         """
         Update the average rating of a product after a review is deleted.
 
         Args:
             db (AsyncSession): The database session.
-            product_id (UUID): Product ID.
+            product_id (int): Product ID.
             old_rating (float): The rating to be removed from the average.
         Raises:
             NotFoundError: If the product does not exist.

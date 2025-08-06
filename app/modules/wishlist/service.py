@@ -1,4 +1,3 @@
-from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 
@@ -10,12 +9,12 @@ from .schemas import WishlistRead, WishlistItemCreate, WishlistItemRead
 
 class WishlistService:
     @staticmethod
-    async def get_user_wishlist(db: AsyncSession, user_id: UUID) -> WishlistRead:
+    async def get_user_wishlist(db: AsyncSession, user_id: int) -> WishlistRead:
         """
         Get the user's wishlist with items.
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): The user's unique identifier.
+            user_id (int): The user's unique identifier.
         Raise:
             ResourceNotFound: If the user does not exist.
         Returns:
@@ -25,13 +24,13 @@ class WishlistService:
 
     @staticmethod
     async def add_item_to_user_wishlist(
-        db: AsyncSession, user_id: UUID, data: WishlistItemCreate
+        db: AsyncSession, user_id: int, data: WishlistItemCreate
     ) -> WishlistItemRead:
         """
         Add an item to the user's wishlist.
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): The user's unique identifier.
+            user_id (int): The user's unique identifier.
             data (WishlistItemCreate): The wishlist item to add.
         Raise:
             ResourceNotFound: If the user or product does not exist.
@@ -57,14 +56,14 @@ class WishlistService:
 
     @staticmethod
     async def remove_item_from_user_wishlist(
-        db: AsyncSession, user_id: UUID, product_id: UUID
+        db: AsyncSession, user_id: int, product_id: int
     ) -> None:
         """
         Remove an item from the user's wishlist.
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): The user's unique identifier.
-            product_id (UUID): The product's unique identifier to remove from wishlist.
+            user_id (int): The user's unique identifier.
+            product_id (int): The product's unique identifier to remove from wishlist.
         Raise:
             ResourceNotFound: If the user or product does not exist.
         """
@@ -78,12 +77,12 @@ class WishlistService:
                 return
 
     @staticmethod
-    async def clear_user_wishlist(db: AsyncSession, user_id: UUID) -> None:
+    async def clear_user_wishlist(db: AsyncSession, user_id: int) -> None:
         """
         Remove all items from the user's wishlist.
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): The user's unique identifier.
+            user_id (int): The user's unique identifier.
         Raise:
             ResourceNotFound: If the user does not exist.
         """
@@ -93,12 +92,12 @@ class WishlistService:
         await db.commit()
 
     @staticmethod
-    async def _get_or_create_user_wishlist(db: AsyncSession, user_id: UUID) -> Wishlist:
+    async def _get_or_create_user_wishlist(db: AsyncSession, user_id: int) -> Wishlist:
         """
         Get or create a wishlist for the user.
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): The user's unique identifier.
+            user_id (int): The user's unique identifier.
         Raise:
             ResourceNotFound: If the user does not exist.
         Returns:

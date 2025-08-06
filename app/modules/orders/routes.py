@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, status
 from typing import Annotated, List
-from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ...database.core import get_session
@@ -25,7 +24,7 @@ async def create_order(
     db: DbSession,
     token_data: AccessToken,
 ) -> OrderRead:
-    return await OrderService.create_order(db, token_data.get_uuid(), data)
+    return await OrderService.create_order(db, token_data.get_int(), data)
 
 
 @router.get("/users/me/orders", response_model=List[OrderRead])
@@ -33,16 +32,16 @@ async def list_my_orders(
     db: DbSession,
     token_data: AccessToken,
 ) -> List[OrderRead]:
-    return await OrderService.list_orders_by_user(db, token_data.get_uuid())
+    return await OrderService.list_orders_by_user(db, token_data.get_int())
 
 
 @router.get("/users/me/orders/{order_id}", response_model=OrderRead)
 async def get_my_order(
-    order_id: UUID,
+    order_id: int,
     db: DbSession,
     token_data: AccessToken,
 ) -> OrderRead:
-    return await OrderService.get_order_by_user(db, token_data.get_uuid(), order_id)
+    return await OrderService.get_order_by_user(db, token_data.get_int(), order_id)
 
 
 @router.get(
@@ -51,8 +50,8 @@ async def get_my_order(
     dependencies=[role_checker_admin],
 )
 async def get_order(
-    order_id: UUID,
-    user_id: UUID,
+    order_id: int,
+    user_id: int,
     db: DbSession,
 ) -> OrderRead:
     return await OrderService.get_order_by_user(db, user_id, order_id)
@@ -64,7 +63,7 @@ async def get_order(
     dependencies=[role_checker_admin],
 )
 async def list_orders_by_user(
-    user_id: UUID,
+    user_id: int,
     db: DbSession,
 ) -> List[OrderRead]:
     return await OrderService.list_orders_by_user(db, user_id)
@@ -76,8 +75,8 @@ async def list_orders_by_user(
     dependencies=[role_checker_admin],
 )
 async def update_order_status(
-    user_id: UUID,
-    order_id: UUID,
+    user_id: int,
+    order_id: int,
     order_status: OrderStatusUpdate,
     db: DbSession,
 ) -> None:

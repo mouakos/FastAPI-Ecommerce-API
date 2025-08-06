@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from uuid import UUID
 from datetime import datetime
 
 
@@ -57,8 +56,8 @@ class AddressUpdate(BaseModel):
 
 
 class AddressRead(AddressBase):
-    id: UUID = Field(..., description="Unique identifier for the address")
-    user_id: UUID = Field(..., description="ID of the user who owns this address")
+    id: int = Field(..., description="Unique identifier for the address")
+    user_id: int = Field(..., description="ID of the user who owns this address")
     created_at: datetime = Field(
         ..., description="Timestamp when the address was created"
     )

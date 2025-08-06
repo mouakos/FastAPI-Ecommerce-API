@@ -31,7 +31,7 @@ class AuthService:
         if not user or not verify_password(login_data.password, user.password_hash):
             raise AuthenticationError("Invalid email or password.")
 
-        return AuthService._generate_tokens(user.id, user.role)
+        return AuthService._generate_tokens(str(user.id), user.role)
 
     @staticmethod
     async def register_user(db: AsyncSession, user_data: UserCreate) -> UserRead:
@@ -56,8 +56,9 @@ class AuthService:
             **user_data.model_dump(),
             password_hash=get_password_hash(user_data.password),
         )
-        user = await db.add(user)
+        db.add(user)
         await db.commit()
+        await db.refresh(user)
         return user
 
     @staticmethod

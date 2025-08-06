@@ -10,10 +10,11 @@ from app.config import settings
 
 async_engine = create_async_engine(settings.DATABASE_URL, echo=True)
 
-local_session = sessionmaker(
+async_session_factory = sessionmaker(
     bind=async_engine,
     class_=AsyncSession,
-    expire_on_commit=False,
+    expire_on_commit=True,
+    autoflush=True,
 )
 
 
@@ -26,6 +27,5 @@ async def init_db():
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Get a session for database operations."""
 
-    async_session = local_session()
-    async with async_session as session:
+    async with async_session_factory() as session:
         yield session

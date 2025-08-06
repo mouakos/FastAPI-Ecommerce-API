@@ -1,4 +1,3 @@
-from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from typing import Optional, Annotated
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -17,7 +16,7 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 @router.get("/{product_id}/reviews", response_model=PaginatedResponse[ReviewRead])
 async def list_product_reviews(
-    product_id: UUID,
+    product_id: int,
     db: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
     page_size: int = Query(
@@ -53,14 +52,14 @@ async def list_product_reviews(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_product_review(
-    product_id: UUID,
+    product_id: int,
     data: ReviewCreate,
     db: DbSession,
     token_data: AccessToken,
 ) -> ReviewRead:
     return await ReviewService.create_product_review(
         db,
-        token_data.get_uuid(),
+        token_data.get_int(),
         product_id,
         data,
     )
@@ -68,21 +67,21 @@ async def create_product_review(
 
 @router.get("/{product_id}/reviews/{review_id}", response_model=ReviewRead)
 async def get_product_review(
-    product_id: UUID, review_id: UUID, db: DbSession, _: AccessToken
+    product_id: int, review_id: int, db: DbSession, _: AccessToken
 ) -> ReviewRead:
     return await ReviewService.get_product_review(db, product_id, review_id)
 
 
 @router.patch("/{product_id}/reviews/{review_id}", response_model=ReviewRead)
 async def update_product_review(
-    product_id: UUID,
-    review_id: UUID,
+    product_id: int,
+    review_id: int,
     data: ReviewUpdate,
     db: DbSession,
     token_data: AccessToken,
 ) -> ReviewRead:
     return await ReviewService.update_product_review(
-        db, token_data.get_uuid(), product_id, review_id, data
+        db, token_data.get_int(), product_id, review_id, data
     )
 
 
@@ -90,13 +89,13 @@ async def update_product_review(
     "/{product_id}/reviews/{review_id}", status_code=status.HTTP_204_NO_CONTENT
 )
 async def delete_product_review(
-    product_id: UUID,
-    review_id: UUID,
+    product_id: int,
+    review_id: int,
     db: DbSession,
     token_data: AccessToken,
 ) -> None:
     await ReviewService.delete_product_review(
-        db, token_data.get_uuid(), product_id, review_id
+        db, token_data.get_int(), product_id, review_id
     )
 
 
@@ -106,7 +105,7 @@ async def delete_product_review(
     dependencies=[admin_role_checker],
 )
 async def list_all_product_reviews(
-    product_id: UUID,
+    product_id: int,
     db: DbSession,
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
     page_size: int = Query(
@@ -146,8 +145,8 @@ async def list_all_product_reviews(
     dependencies=[admin_role_checker],
 )
 async def change_review_visibility(
-    product_id: UUID,
-    review_id: UUID,
+    product_id: int,
+    review_id: int,
     data: AdminReviewUpdate,
     db: DbSession,
 ) -> ReviewRead:

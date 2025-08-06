@@ -29,7 +29,11 @@ class TokenBearer(HTTPBearer):
         token = credentials.credentials
 
         data = decode_access_token(token)
-
+        
+        if not data:
+            logging.warning("Invalid token provided")
+            raise AuthenticationError("Invalid or expired token provided.")
+        
         token_data = TokenData(**data)
         if not token_data.is_valid():
             logging.warning("Invalid token")

@@ -1,6 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
-from uuid import UUID, uuid4
 
 if TYPE_CHECKING:
     from .user import User
@@ -8,7 +7,7 @@ if TYPE_CHECKING:
 
 class Address(SQLModel, table=True):
     __tablename__ = "addresses"
-    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
+    id: int | None = Field(default=None, primary_key=True, index=True)
     firstname: str = Field(nullable=False)
     lastname: str = Field(nullable=False)
     company: Optional[str] = Field(default=None, nullable=True)
@@ -22,5 +21,5 @@ class Address(SQLModel, table=True):
     is_default_billing: bool = Field(default=False)
 
     # Relationship to User (optional, for backref)
-    user_id: UUID = Field(foreign_key="users.id", index=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
     user: Optional["User"] = Relationship(back_populates="addresses")

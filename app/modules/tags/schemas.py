@@ -1,5 +1,4 @@
 from typing import Optional
-from uuid import UUID
 from pydantic import BaseModel, Field
 
 
@@ -8,7 +7,7 @@ class TagBase(BaseModel):
 
 
 class TagAdd(TagBase):
-    tags: list[UUID] = Field(
+    tags: list[int] = Field(
         ..., description="List of tag IDs to be added to the product"
     )
 
@@ -22,5 +21,5 @@ class TagUpdate(TagBase):
 
 
 class TagRead(TagBase):
-    id: UUID = Field(..., description="Unique identifier of the tag")
+    id: int = Field(..., description="Unique identifier of the tag")
     slug: str = Field(..., description="Slug for the tag, used in URLs")

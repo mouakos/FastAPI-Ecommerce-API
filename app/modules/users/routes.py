@@ -1,5 +1,4 @@
 from typing import Annotated, Literal, Optional
-from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -55,7 +54,7 @@ async def get_all_users(
     response_model=UserReadDetail,
     dependencies=[role_checker_admin],
 )
-async def get_user(user_id: UUID, db: DbSession) -> UserReadDetail:
+async def get_user(user_id: int, db: DbSession) -> UserReadDetail:
     return await UserService.get_user(db, user_id)
 
 
@@ -65,7 +64,7 @@ async def get_user(user_id: UUID, db: DbSession) -> UserReadDetail:
     dependencies=[role_checker_admin],
 )
 async def update_user(
-    user_id: UUID,
+    user_id: int,
     user_update: AdminUserUpdate,
     db: DbSession,
 ) -> UserRead:
@@ -77,5 +76,5 @@ async def update_user(
     dependencies=[role_checker_admin],
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_user(user_id: UUID, db: DbSession) -> None:
+async def delete_user(user_id: int, db: DbSession) -> None:
     await UserService.delete_user(db, user_id)

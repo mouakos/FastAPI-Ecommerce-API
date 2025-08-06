@@ -1,7 +1,6 @@
 from typing import Optional, TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel
 from datetime import date
-from uuid import UUID, uuid4
 
 if TYPE_CHECKING:
     from .review import Review
@@ -14,10 +13,10 @@ if TYPE_CHECKING:
 class User(SQLModel, table=True):
     __tablename__ = "users"
 
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     email: str = Field(index=True, nullable=False, unique=True)
     password_hash: str = Field(nullable=False, exclude=True)
-    fistname: Optional[str] = Field(default=None, nullable=True)
+    firstname: Optional[str] = Field(default=None, nullable=True)
     lastname: Optional[str] = Field(default=None, nullable=True)
     gender: Optional[str] = Field(default="other", nullable=True)
     date_of_birth: Optional[date] = Field(default=None, nullable=True)
@@ -36,7 +35,9 @@ class User(SQLModel, table=True):
     )
 
     # Relationship with cart - one-to-one
-    cart: Optional["Cart"] = Relationship(back_populates="user")
+    cart: Optional["Cart"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"lazy": "selectin"}
+    )
 
     # Relationship with orders - one-to-many
     orders: list["Order"] = Relationship(
@@ -44,4 +45,6 @@ class User(SQLModel, table=True):
     )
 
     # Relationship with wishlist - one-to-one
-    wishlist: Optional["Wishlist"] = Relationship(back_populates="user")
+    wishlist: Optional["Wishlist"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"lazy": "selectin"}
+    )

@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, status
-from uuid import UUID
 from typing import Annotated
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -20,7 +19,7 @@ async def get_my_cart(
     db: DbSession,
     token_data: AccessToken,
 ):
-    return await CartService.get_cart(db, token_data.get_uuid())
+    return await CartService.get_cart(db, token_data.get_int())
 
 
 @router.post(
@@ -33,26 +32,26 @@ async def add_item_to_my_cart(
     db: DbSession,
     token_data: AccessToken,
 ):
-    return await CartService.add_item(db, token_data.get_uuid(), data)
+    return await CartService.add_item(db, token_data.get_int(), data)
 
 
 @router.patch("/me/cart/items/{item_id}", response_model=CartItemRead)
 async def update_item_in_my_cart(
-    item_id: UUID,
+    item_id: int,
     data: CartItemUpdate,
     db: DbSession,
     token_data: AccessToken,
 ):
-    return await CartService.update_item(db, token_data.get_uuid(), item_id, data)
+    return await CartService.update_item(db, token_data.get_int(), item_id, data)
 
 
 @router.delete("/me/cart/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_item_from_my_cart(
-    item_id: UUID,
+    item_id: int,
     db: DbSession,
     token_data: AccessToken,
 ):
-    await CartService.remove_item(db, token_data.get_uuid(), item_id)
+    await CartService.remove_item(db, token_data.get_int(), item_id)
 
 
 @router.delete("/me/cart/clear", status_code=status.HTTP_204_NO_CONTENT)
@@ -60,7 +59,7 @@ async def clear_my_cart(
     db: DbSession,
     token_data: AccessToken,
 ):
-    await CartService.clear_cart(db, token_data.get_uuid())
+    await CartService.clear_cart(db, token_data.get_int())
 
 
 @router.get(
@@ -69,7 +68,7 @@ async def clear_my_cart(
     dependencies=[role_checker_admin],
 )
 async def get_cart(
-    user_id: UUID,
+    user_id: int,
     db: DbSession,
 ):
     return await CartService.get_cart(db, user_id)

@@ -1,5 +1,4 @@
 from typing import Optional
-from uuid import UUID
 from pydantic import BaseModel, Field
 
 
@@ -11,13 +10,13 @@ class ReviewCreate(BaseModel):
 
 
 class ReviewRead(BaseModel):
-    id: UUID = Field(..., description="Unique identifier for the review")
+    id: int = Field(..., description="Unique identifier for the review")
     rating: int = Field(..., description="Rating given by the user")
     comment: Optional[str] = Field(
         default=None, description="Comment provided by the user"
     )
-    user_id: UUID = Field(..., description="ID of the user who wrote the review")
-    product_id: UUID = Field(..., description="ID of the product being reviewed")
+    user_id: int = Field(..., description="ID of the user who wrote the review")
+    product_id: int = Field(..., description="ID of the product being reviewed")
     is_published: bool = Field(
         ..., description="Indicates if the review is published or not"
     )

@@ -2,7 +2,6 @@ from math import ceil
 from typing import Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
-from uuid import UUID
 from slugify import slugify
 
 from app.exceptions import NotFoundError, ConflictError
@@ -108,12 +107,12 @@ class ProductService:
         return product
 
     @staticmethod
-    async def get_product(db: AsyncSession, product_id: UUID) -> ProductReadDetail:
+    async def get_product(db: AsyncSession, product_id: int) -> ProductReadDetail:
         """Get a product by its ID.
 
         Args:
             db (AsyncSession): The database session.
-            product_id (UUID): The ID of the product.
+            product_id (int): The ID of the product.
 
         Raises:
             NotFoundError: If the product does not exist.
@@ -128,13 +127,13 @@ class ProductService:
 
     @staticmethod
     async def update_product(
-        db: AsyncSession, product_id: UUID, data: ProductUpdate
+        db: AsyncSession, product_id: int, data: ProductUpdate
     ) -> ProductRead:
         """Update an existing product.
 
         Args:
             db (AsyncSession): The database session.
-            product_id (UUID): The ID of the product to update.
+            product_id (int): The ID of the product to update.
             data (ProductUpdate): Fields to update.
 
         Raises:
@@ -166,12 +165,12 @@ class ProductService:
         return product
 
     @staticmethod
-    async def delete_product(db: AsyncSession, product_id: UUID) -> None:
+    async def delete_product(db: AsyncSession, product_id: int) -> None:
         """Delete a product.
 
         Args:
             db (AsyncSession): The database session.
-            product_id (UUID): The ID of the product to delete.
+            product_id (int): The ID of the product to delete.
 
         Raises:
             NotFoundError: If the product does not exist.
@@ -225,7 +224,7 @@ class ProductService:
 
     @staticmethod
     async def _check_name_conflict(
-        db: AsyncSession, name: str, exclude_id: UUID
+        db: AsyncSession, name: str, exclude_id: int
     ) -> bool:
         conflict = await db.exec(
             select(Product).where(
@@ -236,7 +235,7 @@ class ProductService:
         return conflict.first() is not None
 
     @staticmethod
-    async def _check_sku_conflict(db: AsyncSession, sku: str, exclude_id: UUID) -> bool:
+    async def _check_sku_conflict(db: AsyncSession, sku: str, exclude_id: int) -> bool:
         conflict = await db.exec(
             select(Product).where(
                 func.lower(Product.sku) == sku.lower(),

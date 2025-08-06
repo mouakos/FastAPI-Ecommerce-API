@@ -1,4 +1,3 @@
-from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 
@@ -11,12 +10,12 @@ from .schemas import CartItemCreate, CartItemUpdate, CartRead
 
 class CartService:
     @staticmethod
-    async def get_cart(db: AsyncSession, user_id: UUID) -> CartRead:
+    async def get_cart(db: AsyncSession, user_id: int) -> CartRead:
         """Get the cart for a specific user.
 
         Args:
             db (AsyncSession): Database session.
-            user_id (UUID): Unique identifier for the user.
+            user_id (int): Unique identifier for the user.
         Raises:
             NotFoundError: If the user does not exist.
 
@@ -28,13 +27,13 @@ class CartService:
 
     @staticmethod
     async def add_item(
-        db: AsyncSession, user_id: UUID, data: CartItemCreate
+        db: AsyncSession, user_id: int, data: CartItemCreate
     ) -> CartItem:
         """Add an item to the user's cart.
 
         Args:
             db (AsyncSession): Database session.
-            user_id (UUID): Unique identifier for the user.
+            user_id (int): Unique identifier for the user.
             data (CartItemCreate): Cart item data to add.
         Raises:
             NotFoundError: If the product or user does not exist.
@@ -75,14 +74,14 @@ class CartService:
 
     @staticmethod
     async def update_item(
-        db: AsyncSession, user_id: UUID, item_id: UUID, data: CartItemUpdate
+        db: AsyncSession, user_id: int, item_id: int, data: CartItemUpdate
     ) -> CartItem:
         """Update the quantity of an item in the user's cart.
 
         Args:
             db (AsyncSession): Database session.
-            user_id (UUID): Unique identifier for the user.
-            item_id (UUID): Unique identifier for the cart item.
+            user_id (int): Unique identifier for the user.
+            item_id (int): Unique identifier for the cart item.
             data (CartItemUpdate): Updated cart item data.
 
         Raises:
@@ -116,13 +115,13 @@ class CartService:
         return item
 
     @staticmethod
-    async def remove_item(db: AsyncSession, user_id: UUID, item_id: UUID) -> None:
+    async def remove_item(db: AsyncSession, user_id: int, item_id: int) -> None:
         """Remove an item from the user's cart.
 
         Args:
             db (AsyncSession): Database session.
-            user_id (UUID): Unique identifier for the user.
-            item_id (UUID): Unique identifier for the cart item.
+            user_id (int): Unique identifier for the user.
+            item_id (int): Unique identifier for the cart item.
 
         Raises:
             NotFoundError: If the user or cart item does not exist.
@@ -147,12 +146,12 @@ class CartService:
         await db.commit()
 
     @staticmethod
-    async def clear_cart(db: AsyncSession, user_id: UUID) -> None:
+    async def clear_cart(db: AsyncSession, user_id: int) -> None:
         """Clear the user's cart.
 
         Args:
             db (AsyncSession): Database session.
-            user_id (UUID): Unique identifier for the user.
+            user_id (int): Unique identifier for the user.
 
         Raises:
             NotFoundError: If the user does not exist.
@@ -167,12 +166,12 @@ class CartService:
         await db.commit()
 
     @staticmethod
-    async def _get_or_create_cart(db: AsyncSession, user_id: UUID) -> Cart:
+    async def _get_or_create_cart(db: AsyncSession, user_id: int) -> Cart:
         """Get or create a cart for the user.
 
         Args:
             db (AsyncSession): Database session.
-            user_id (UUID): Unique identifier for the user.
+            user_id (int): Unique identifier for the user.
         Raises:
             NotFoundError: If the user does not exist.
         Returns:

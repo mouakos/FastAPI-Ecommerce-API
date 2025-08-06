@@ -1,4 +1,3 @@
-from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, update
 
@@ -11,13 +10,13 @@ from .schemas import AddressCreate, AddressRead, AddressUpdate
 class AddressService:
     @staticmethod
     async def create_user_address(
-        db: AsyncSession, user_id: UUID, data: AddressCreate
+        db: AsyncSession, user_id: int, data: AddressCreate
     ) -> AddressRead:
         """Create a new address for a user.
 
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): The ID of the user to create the address for.
+            user_id (int): The ID of the user to create the address for.
             data (AddressCreate): The data for the new address.
         Raises:
             NotFoundError: If the user does not exist.
@@ -39,14 +38,14 @@ class AddressService:
 
     @staticmethod
     async def get_user_address(
-        db: AsyncSession, user_id: UUID, address_id: UUID
+        db: AsyncSession, user_id: int, address_id: int
     ) -> AddressRead:
         """Get an address by its ID for a specific user.
 
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): The ID of the user who owns the address.
-            address_id (UUID): The ID of the address to retrieve.
+            user_id (int): The ID of the user who owns the address.
+            address_id (int): The ID of the address to retrieve.
 
         Raises:
             NotFoundError: If the user or address is not found.
@@ -69,13 +68,13 @@ class AddressService:
 
     @staticmethod
     async def list_addresses_by_user(
-        db: AsyncSession, user_id: UUID
+        db: AsyncSession, user_id: int
     ) -> list[AddressRead]:
         """List all addresses for a user.
 
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): The ID of the user to list addresses for.
+            user_id (int): The ID of the user to list addresses for.
 
         Returns:
             list[AddressRead]: The list of addresses for the user.
@@ -89,15 +88,15 @@ class AddressService:
 
     @staticmethod
     async def update_user_address(
-        db: AsyncSession, user_id: UUID, address_id: UUID, data: AddressUpdate
+        db: AsyncSession, user_id: int, address_id: int, data: AddressUpdate
     ) -> AddressRead:
         """Update an existing address for a user.
 
         Args:
             db (AsyncSession): The database session.
-            address_id (UUID): The ID of the address to update.
+            address_id (int): The ID of the address to update.
             data (AddressUpdate): The updated data for the address.
-            user_id (UUID): The ID of the user who owns the address.
+            user_id (int): The ID of the user who owns the address.
 
         Raises:
             NotFoundError: If the user or address is not found.
@@ -138,14 +137,14 @@ class AddressService:
 
     @staticmethod
     async def delete_user_address(
-        db: AsyncSession, user_id: UUID, address_id: UUID
+        db: AsyncSession, user_id: int, address_id: int
     ) -> None:
         """Delete an address by its ID for a specific user.
 
         Args:
             db (AsyncSession): The database session.
-            address_id (UUID): The ID of the address to delete.
-            user_id (UUID): The ID of the user who owns the address.
+            address_id (int): The ID of the address to delete.
+            user_id (int): The ID of the user who owns the address.
 
         Raises:
             NotFoundError: If the user or address is not found.
@@ -166,7 +165,7 @@ class AddressService:
         await db.commit()
 
     @staticmethod
-    async def _unset_default_flag(db: AsyncSession, user_id: UUID, flag_field: str):
+    async def _unset_default_flag(db: AsyncSession, user_id: int, flag_field: str):
         await db.exec(
             update(Address)
             .where(Address.user_id == user_id)

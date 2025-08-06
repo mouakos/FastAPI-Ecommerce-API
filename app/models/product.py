@@ -1,6 +1,5 @@
 from typing import Optional, TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel
-from uuid import UUID, uuid4
 
 from .product_tag import ProductTag
 
@@ -14,7 +13,7 @@ if TYPE_CHECKING:
 class Product(SQLModel, table=True):
     __tablename__ = "products"
 
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True, nullable=False)
     slug: str = Field(index=True, nullable=False, unique=True)
     description: Optional[str] = Field(default=None)
@@ -26,7 +25,7 @@ class Product(SQLModel, table=True):
     is_active: bool = Field(default=True, nullable=False)
 
     # Relationship with category - many-to-one
-    category_id: UUID = Field(default=None, foreign_key="categories.id", nullable=False)
+    category_id: int = Field(default=None, foreign_key="categories.id", nullable=False)
     category: Optional["Category"] = Relationship(back_populates="products")
 
     # Relationship with tags - many-to-many

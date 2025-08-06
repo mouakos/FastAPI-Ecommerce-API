@@ -1,6 +1,5 @@
 from typing import Optional, Annotated
 from fastapi import APIRouter, Depends, Query, status
-from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.utils.paginate import PaginatedResponse
@@ -17,7 +16,7 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
 @router.get("/{product_id}", response_model=ProductReadDetail)
-async def get_product(product_id: UUID, db_session: DbSession) -> ProductReadDetail:
+async def get_product(product_id: int, db_session: DbSession) -> ProductReadDetail:
     return await ProductService.get_product(db_session, product_id)
 
 
@@ -118,7 +117,7 @@ async def list_all_products(
     dependencies=[role_checker_admin],
 )
 async def update_product(
-    product_id: UUID, update_data: ProductUpdate, db_session: DbSession
+    product_id: int, update_data: ProductUpdate, db_session: DbSession
 ) -> ProductRead:
     return await ProductService.update_product(db_session, product_id, update_data)
 
@@ -128,5 +127,5 @@ async def update_product(
     dependencies=[role_checker_admin],
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def admin_delete_product(product_id: UUID, db_session: DbSession) -> None:
+async def admin_delete_product(product_id: int, db_session: DbSession) -> None:
     await ProductService.delete_product(db_session, product_id)

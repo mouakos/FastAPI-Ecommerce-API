@@ -1,6 +1,5 @@
 from math import ceil
 from typing import Optional
-from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
 
@@ -62,11 +61,11 @@ class UserService:
         )
 
     @staticmethod
-    async def get_user(db: AsyncSession, user_id: UUID) -> UserReadDetail:
+    async def get_user(db: AsyncSession, user_id: int) -> UserReadDetail:
         """Retrieve a user by their ID.
         Args:ng.
             db (AsyncSession): The database session.
-            user_id (UUID): User ID to retrieve.
+            user_id (int): User ID to retrieve.
         Raises:
             ResourceNotFoundError: If the user is not found.
 
@@ -79,14 +78,12 @@ class UserService:
         return user
 
     @staticmethod
-    async def update_user(
-        db: AsyncSession, user_id: UUID, data: UserUpdate
-    ) -> UserRead:
+    async def update_user(db: AsyncSession, user_id: int, data: UserUpdate) -> UserRead:
         """Update a user's information.
 
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): User ID to update.
+            user_id (int): User ID to update.
             user_data (dict): Data to update the user with.
 
         Raises:
@@ -103,15 +100,16 @@ class UserService:
             setattr(user, key, value)
 
         await db.commit()
+        await db.refresh(user)
         return user
 
     @staticmethod
-    async def delete_user(db: AsyncSession, user_id: UUID) -> None:
+    async def delete_user(db: AsyncSession, user_id: int) -> None:
         """Delete a user by their ID.
 
         Args:
             db (AsyncSession): Database session for querying.
-            user_id (UUID): User ID to delete.
+            user_id (int): User ID to delete.
 
         Raises:
             NotFoundError: If the user is not found.
@@ -123,13 +121,13 @@ class UserService:
         await db.commit()
 
     async def change_user_password(
-        db: AsyncSession, user_id: UUID, password_data: PasswordUpdate
+        db: AsyncSession, user_id: int, password_data: PasswordUpdate
     ) -> None:
         """Change a user's password.
 
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): User ID to change the password for.
+            user_id (int): User ID to change the password for.
             password_data (PasswordChange): Data containing the new password.
 
         Raises:
@@ -145,9 +143,7 @@ class UserService:
             raise NotFoundError(f"User with ID {user_id} not found")
 
         # Verify current password
-        if not verify_password(
-            get_password_hash(password_data.current_password), user.password_hash
-        ):
+        if not verify_password(password_data.current_password, user.password_hash):
             raise BadRequestError("Invalid password.")
 
         # Verify new passwords match
@@ -156,7 +152,6 @@ class UserService:
 
         user.password_hash = get_password_hash(password_data.new_password)
         await db.commit()
-        return user
 
     @staticmethod
     def _build_user_filters(

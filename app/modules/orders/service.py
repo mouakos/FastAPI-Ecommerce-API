@@ -1,4 +1,3 @@
-from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 
@@ -14,13 +13,13 @@ from .schemas import OrderCreate, OrderRead, OrderStatus
 class OrderService:
     @staticmethod
     async def create_order(
-        db: AsyncSession, user_id: UUID, data: OrderCreate
+        db: AsyncSession, user_id: int, data: OrderCreate
     ) -> OrderRead:
         """Create a new order for a user.
 
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): The ID of the user to create the order for.
+            user_id (int): The ID of the user to create the order for.
             data (OrderCreate): The data for the new order.
 
         Raises:
@@ -75,14 +74,14 @@ class OrderService:
 
     @staticmethod
     async def get_order_by_user(
-        db: AsyncSession, user_id: UUID, order_id: UUID
+        db: AsyncSession, user_id: int, order_id: int
     ) -> OrderRead:
         """Get an order by its ID for a specific user.
 
         Args:
             db (AsyncSession): The database session.
-            order_id (UUID): The ID of the order to retrieve.
-            user_id (UUID): The ID of the user who owns the order.
+            order_id (int): The ID of the order to retrieve.
+            user_id (int): The ID of the user who owns the order.
 
         Raises:
             NotFoundError: If the user or order is not found.
@@ -101,12 +100,12 @@ class OrderService:
         return order
 
     @staticmethod
-    async def list_orders_by_user(db: AsyncSession, user_id: UUID) -> list[OrderRead]:
+    async def list_orders_by_user(db: AsyncSession, user_id: int) -> list[OrderRead]:
         """List all orders for a specific user.
 
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): The ID of the user to list orders for.
+            user_id (int): The ID of the user to list orders for.
 
         Returns:
             list[OrderRead]: The list of orders for the user.
@@ -119,14 +118,14 @@ class OrderService:
 
     @staticmethod
     async def update_order_status(
-        db: AsyncSession, user_id: UUID, order_id: UUID, order_status: OrderStatus
+        db: AsyncSession, user_id: int, order_id: int, order_status: OrderStatus
     ) -> OrderRead:
         """Update the status of an order.
 
         Args:
             db (AsyncSession): The database session.
-            user_id (UUID): The ID of the user who owns the order.
-            order_id (UUID): The ID of the order to update.
+            user_id (int): The ID of the user who owns the order.
+            order_id (int): The ID of the order to update.
             order_status (OrderStatus): The new status for the order.
 
         Raises:

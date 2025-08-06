@@ -1,6 +1,5 @@
 from typing import Annotated
 from fastapi import APIRouter, status, Depends
-from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database.core import get_session
@@ -16,7 +15,7 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 @router.get("/me/wishlist", response_model=WishlistRead)
 async def get_my_wishlist(db: DbSession, token_data: AccessToken) -> WishlistRead:
-    return await WishlistService.get_user_wishlist(db, token_data.get_uuid())
+    return await WishlistService.get_user_wishlist(db, token_data.get_int())
 
 
 @router.post(
@@ -30,7 +29,7 @@ async def add_item_to_my_wishlist(
     token_data: AccessToken,
 ) -> WishlistItemRead:
     return await WishlistService.add_item_to_user_wishlist(
-        db, token_data.get_uuid(), data
+        db, token_data.get_int(), data
     )
 
 
@@ -38,18 +37,18 @@ async def add_item_to_my_wishlist(
     "/me/wishlist/items/{product_id}", status_code=status.HTTP_204_NO_CONTENT
 )
 async def remove_item_from_my_wishlist(
-    product_id: UUID,
+    product_id: int,
     db: DbSession,
     token_data: AccessToken,
 ) -> None:
     await WishlistService.remove_item_from_user_wishlist(
-        db, token_data.get_uuid(), product_id
+        db, token_data.get_int(), product_id
     )
 
 
 @router.delete("/me/wishlist/clear", status_code=status.HTTP_204_NO_CONTENT)
 async def clear_my_wishlist(db: DbSession, token_data: AccessToken) -> None:
-    await WishlistService.clear_user_wishlist(db, token_data.get_uuid())
+    await WishlistService.clear_user_wishlist(db, token_data.get_int())
 
 
 @router.get(
@@ -57,5 +56,5 @@ async def clear_my_wishlist(db: DbSession, token_data: AccessToken) -> None:
     response_model=WishlistRead,
     dependencies=[role_checker_admin],
 )
-async def get_user_wishlist(user_id: UUID, db: DbSession) -> WishlistRead:
+async def get_user_wishlist(user_id: int, db: DbSession) -> WishlistRead:
     return await WishlistService.get_user_wishlist(db, user_id)

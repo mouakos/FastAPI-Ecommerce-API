@@ -1,7 +1,6 @@
 from datetime import date
 from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr, Field
-from uuid import UUID
 
 from app.modules.addresses.schemas import AddressRead
 from app.modules.carts.schemas import CartRead
@@ -35,7 +34,7 @@ class UserCreate(UserBase):
 
 
 class UserRead(UserBase):
-    id: UUID = Field(..., description="Unique identifier for the user")
+    id: int = Field(..., description="Unique identifier for the user")
     date_of_birth: Optional[date] = Field(None, description="Date of birth of the user")
     phone_number: Optional[str] = Field(None, description="Phone number of the user")
     role: Literal["customer", "admin"] = Field(..., description="Role of the user")

@@ -1,6 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import TYPE_CHECKING
-from uuid import UUID, uuid4
 
 from .product_tag import ProductTag
 
@@ -11,7 +10,7 @@ if TYPE_CHECKING:
 class Tag(SQLModel, table=True):
     __tablename__ = "tags"
 
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True, unique=True, nullable=False)
     slug: str = Field(index=True, unique=True, nullable=False)
 

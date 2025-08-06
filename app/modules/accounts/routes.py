@@ -22,7 +22,7 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 async def get_my_account(
     token_data: AccessToken, db_session: DbSession
 ) -> UserReadDetail:
-    return await UserService.get_user(db_session, token_data.get_uuid())
+    return await UserService.get_user(db_session, token_data.get_int())
 
 
 @router.patch("/", response_model=UserRead)
@@ -31,7 +31,7 @@ async def update_my_account(
     db_session: DbSession,
     token_data: AccessToken,
 ) -> UserRead:
-    return await UserService.update_user(db_session, token_data.get_uuid(), user_update)
+    return await UserService.update_user(db_session, token_data.get_int(), user_update)
 
 
 @router.patch("/update-password", status_code=status.HTTP_204_NO_CONTENT)
@@ -41,10 +41,10 @@ async def update_my_password(
     token_data: AccessToken,
 ) -> None:
     await UserService.change_user_password(
-        db_session, token_data.get_uuid(), password_data
+        db_session, token_data.get_int(), password_data
     )
 
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_my_account(db_session: DbSession, token_data: AccessToken) -> None:
-    await UserService.delete_user(db_session, token_data.get_uuid())
+    await UserService.delete_user(db_session, token_data.get_int())

@@ -1,6 +1,5 @@
 from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, status, Query
-from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.utils.paginate import PaginatedResponse
@@ -28,7 +27,7 @@ async def list_tags(
 
 
 @router.get("/tags/{tag_id}", response_model=TagRead)
-async def get_tag(tag_id: UUID, db_session: DbSession) -> TagRead:
+async def get_tag(tag_id: int, db_session: DbSession) -> TagRead:
     return await TagService.get_tag(db_session, tag_id)
 
 
@@ -47,7 +46,7 @@ async def create_tag(data: TagCreate, db_session: DbSession) -> TagRead:
     response_model=TagRead,
     dependencies=[role_checker_admin],
 )
-async def update_tag(tag_id: UUID, data: TagUpdate, db_session: DbSession) -> TagRead:
+async def update_tag(tag_id: int, data: TagUpdate, db_session: DbSession) -> TagRead:
     return await TagService.update_tag(db_session, tag_id, data)
 
 
@@ -56,7 +55,7 @@ async def update_tag(tag_id: UUID, data: TagUpdate, db_session: DbSession) -> Ta
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[role_checker_admin],
 )
-async def delete_tag(tag_id: UUID, db_session: DbSession) -> None:
+async def delete_tag(tag_id: int, db_session: DbSession) -> None:
     await TagService.delete_tag(db_session, tag_id)
 
 
@@ -66,7 +65,7 @@ async def delete_tag(tag_id: UUID, db_session: DbSession) -> None:
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def add_tags_to_product(
-    product_id: UUID, db_session: DbSession, tags: TagAdd
+    product_id: int, db_session: DbSession, tags: TagAdd
 ) -> None:
     await TagService.add_tags_to_product(db_session, product_id, tags)
 
@@ -77,6 +76,6 @@ async def add_tags_to_product(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def remove_tag_from_product(
-    tag_id: UUID, product_id: UUID, db_session: DbSession
+    tag_id: int, product_id: int, db_session: DbSession
 ) -> None:
     await TagService.remove_tag_from_product(db_session, product_id, tag_id)

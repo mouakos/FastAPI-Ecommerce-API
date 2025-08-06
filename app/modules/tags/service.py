@@ -1,6 +1,5 @@
 from math import ceil
 from typing import Optional
-from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
 from slugify import slugify
@@ -57,13 +56,13 @@ class TagService:
         )
 
     @staticmethod
-    async def get_tag(db: AsyncSession, tag_id: UUID) -> TagRead:
+    async def get_tag(db: AsyncSession, tag_id: int) -> TagRead:
         """
         Retrieve a tag by its ID.
 
         Args:
             db (AsyncSession): The database session.
-            tag_id (UUID): The ID of the tag to retrieve.
+            tag_id (int): The ID of the tag to retrieve.
 
         Raises:
             NotFoundError: If the tag is not found.
@@ -101,12 +100,12 @@ class TagService:
         return tag
 
     @staticmethod
-    async def update_tag(db: AsyncSession, tag_id: UUID, data: TagUpdate) -> TagRead:
+    async def update_tag(db: AsyncSession, tag_id: int, data: TagUpdate) -> TagRead:
         """Update an existing tag.
 
         Args:
             db (AsyncSession): The database session.
-            tag_id (UUID): The ID of the tag to update.
+            tag_id (int): The ID of the tag to update.
             data (TagUpdate): The updated tag data.
 
         Raises:
@@ -139,13 +138,13 @@ class TagService:
         return tag
 
     @staticmethod
-    async def delete_tag(db: AsyncSession, tag_id: UUID) -> None:
+    async def delete_tag(db: AsyncSession, tag_id: int) -> None:
         """
         Delete a tag by its ID.
 
         Args:
             db (AsyncSession): The database session.
-            tag_id (UUID): The ID of the tag to delete.
+            tag_id (int): The ID of the tag to delete.
 
         Raises:
             NotFoundError: If the tag does not exist.
@@ -167,14 +166,14 @@ class TagService:
 
     @staticmethod
     async def add_tags_to_product(
-        db: AsyncSession, tags: TagAdd, product_id: UUID
+        db: AsyncSession, tags: TagAdd, product_id: int
     ) -> None:
         """
         Assign tags to a product.
 
         Args:
             db (AsyncSession): The database session.
-            product_id (UUID): The ID of the product.
+            product_id (int): The ID of the product.
             tags (TagAdd): The tags to assign to the product.
 
         Raises:
@@ -193,15 +192,15 @@ class TagService:
 
     @staticmethod
     async def remove_tag_from_product(
-        db: AsyncSession, product_id: UUID, tag_id: UUID
+        db: AsyncSession, product_id: int, tag_id: int
     ) -> None:
         """
         Remove a tag from a product.
 
         Args:
             db (AsyncSession): The database session.
-            product_id (UUID): The ID of the product.
-            tag_id (UUID): The ID of the tag to remove.
+            product_id (int): The ID of the product.
+            tag_id (int): The ID of the tag to remove.
 
         Raises:
             NotFoundError: If the product or tag does not exist.

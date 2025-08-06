@@ -1,5 +1,4 @@
 from typing import Annotated, Optional
-from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -32,7 +31,7 @@ async def list_active_categories(
 
 @router.get("/{category_id}", response_model=CategoryRead)
 async def get_category(
-    category_id: UUID,
+    category_id: int,
     db: DbSession,
 ) -> CategoryRead:
     return await CategoryService.get_category(db, category_id)
@@ -78,7 +77,7 @@ async def create_category(
     dependencies=[role_checker_admin],
 )
 async def update_category(
-    category_id: UUID,
+    category_id: int,
     update_data: CategoryUpdate,
     db: DbSession,
 ) -> CategoryRead:
@@ -90,5 +89,5 @@ async def update_category(
     dependencies=[role_checker_admin],
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_category(category_id: UUID, db: DbSession) -> None:
+async def delete_category(category_id: int, db: DbSession) -> None:
     await CategoryService.delete_category(db, category_id)

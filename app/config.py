@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ADMIN_EMAIL: str
     ADMIN_PASSWORD: str
-    ADMIN_FULL_NAME: str
+    ADMIN_FIRST_NAME: str
+    ADMIN_LAST_NAME: str
 
     model_config = SettingsConfigDict(
         env_file=".env",  # Load environment variables from .env file

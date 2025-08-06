@@ -1,5 +1,4 @@
 from typing import Optional
-from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.modules.categories.schemas import CategoryRead
@@ -21,12 +20,12 @@ class ProductBase(BaseModel):
 
 
 class ProductCreate(ProductBase):
-    category_id: UUID = Field(
+    category_id: int = Field(
         ..., description="ID of the category this product belongs to"
     )
 
 class ProductRead(ProductCreate):
-    id: UUID = Field(..., description="Unique identifier of the product")
+    id: int = Field(..., description="Unique identifier of the product")
     is_active: bool = Field(
         default=True, description="Indicates if the product is active"
     )
@@ -34,7 +33,7 @@ class ProductRead(ProductCreate):
 
 
 class ProductReadDetail(ProductBase):
-    id: UUID = Field(..., description="Unique identifier of the product")
+    id: int = Field(..., description="Unique identifier of the product")
     slug: str = Field(..., description="Slug of the product")
     is_active: bool = Field(
         default=True, description="Indicates if the product is active"
@@ -66,6 +65,6 @@ class ProductUpdate(BaseModel):
     stock: Optional[int] = Field(
         None, ge=0, description="Stock quantity of the product"
     )
-    category_id: Optional[UUID] = Field(
+    category_id: Optional[int] = Field(
         None, description="ID of the category this product belongs to"
     )

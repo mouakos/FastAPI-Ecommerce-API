@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import uuid4
 from passlib.context import CryptContext
 from jose import jwt, JWTError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.config import settings
 
@@ -58,9 +58,11 @@ def create_token(
         "jti": str(uuid4()),
         "refresh": refresh,
     }
-    payload["exp"] = datetime.now() + (
+    expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(seconds=settings.JWT_ACCESS_TOKEN_EXPIRE_SECONDS)
     )
+
+    payload["exp"] = expire
     token = jwt.encode(
         payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
     )
@@ -84,3 +86,4 @@ def decode_access_token(token: str) -> Optional[dict]:
     except JWTError as e:
         logging.error(f"Token decoding failed: {e}")
         return None
+
